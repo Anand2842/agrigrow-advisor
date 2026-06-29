@@ -140,10 +140,15 @@ export const subsidiesByStateQuery = (state: StateCode | null) =>
     queryKey: ["subsidies", state],
     enabled: !!state,
     queryFn: async () => {
+      const fullName = STATE_NAMES[state!];
+      // Match either full state name (e.g. "Uttar Pradesh"), the short code,
+      // or pan-India schemes ("All India").
       const { data, error } = await supabase
         .from("subsidy_schemes")
         .select("*")
-        .ilike("applicable_states", `%${state}%`);
+        .or(
+          `applicable_states.ilike.%${fullName}%,applicable_states.ilike.%${state}%,applicable_states.ilike.%All India%`,
+        );
       if (error) throw error;
       return data ?? [];
     },
