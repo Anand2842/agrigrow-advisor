@@ -9,8 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SubsidyRouteImport } from './routes/subsidy'
+import { Route as ReportRouteImport } from './routes/report'
+import { Route as RecommendationsRouteImport } from './routes/recommendations'
+import { Route as DistrictRouteImport } from './routes/district'
+import { Route as CropRouteImport } from './routes/crop'
+import { Route as BomRouteImport } from './routes/bom'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SubsidyRoute = SubsidyRouteImport.update({
+  id: '/subsidy',
+  path: '/subsidy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecommendationsRoute = RecommendationsRouteImport.update({
+  id: '/recommendations',
+  path: '/recommendations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DistrictRoute = DistrictRouteImport.update({
+  id: '/district',
+  path: '/district',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CropRoute = CropRouteImport.update({
+  id: '/crop',
+  path: '/crop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BomRoute = BomRouteImport.update({
+  id: '/bom',
+  path: '/bom',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +55,116 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bom': typeof BomRoute
+  '/crop': typeof CropRoute
+  '/district': typeof DistrictRoute
+  '/recommendations': typeof RecommendationsRoute
+  '/report': typeof ReportRoute
+  '/subsidy': typeof SubsidyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bom': typeof BomRoute
+  '/crop': typeof CropRoute
+  '/district': typeof DistrictRoute
+  '/recommendations': typeof RecommendationsRoute
+  '/report': typeof ReportRoute
+  '/subsidy': typeof SubsidyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bom': typeof BomRoute
+  '/crop': typeof CropRoute
+  '/district': typeof DistrictRoute
+  '/recommendations': typeof RecommendationsRoute
+  '/report': typeof ReportRoute
+  '/subsidy': typeof SubsidyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/bom'
+    | '/crop'
+    | '/district'
+    | '/recommendations'
+    | '/report'
+    | '/subsidy'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/bom'
+    | '/crop'
+    | '/district'
+    | '/recommendations'
+    | '/report'
+    | '/subsidy'
+  id:
+    | '__root__'
+    | '/'
+    | '/bom'
+    | '/crop'
+    | '/district'
+    | '/recommendations'
+    | '/report'
+    | '/subsidy'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BomRoute: typeof BomRoute
+  CropRoute: typeof CropRoute
+  DistrictRoute: typeof DistrictRoute
+  RecommendationsRoute: typeof RecommendationsRoute
+  ReportRoute: typeof ReportRoute
+  SubsidyRoute: typeof SubsidyRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/subsidy': {
+      id: '/subsidy'
+      path: '/subsidy'
+      fullPath: '/subsidy'
+      preLoaderRoute: typeof SubsidyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recommendations': {
+      id: '/recommendations'
+      path: '/recommendations'
+      fullPath: '/recommendations'
+      preLoaderRoute: typeof RecommendationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/district': {
+      id: '/district'
+      path: '/district'
+      fullPath: '/district'
+      preLoaderRoute: typeof DistrictRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crop': {
+      id: '/crop'
+      path: '/crop'
+      fullPath: '/crop'
+      preLoaderRoute: typeof CropRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bom': {
+      id: '/bom'
+      path: '/bom'
+      fullPath: '/bom'
+      preLoaderRoute: typeof BomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +177,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BomRoute: BomRoute,
+  CropRoute: CropRoute,
+  DistrictRoute: DistrictRoute,
+  RecommendationsRoute: RecommendationsRoute,
+  ReportRoute: ReportRoute,
+  SubsidyRoute: SubsidyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
