@@ -62,38 +62,37 @@ export const structuresForCropsQuery = (cropIds: string[]) =>
     queryKey: ["structures", cropIds.slice().sort()],
     enabled: cropIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("crop_structure_match")
-        .select("crop_id, structure_id, suitability_score, notes, structure_data(*)")
-        .in("crop_id", cropIds);
-      if (error) throw error;
-      // Aggregate average suitability per structure
-      const map = new Map<
-        string,
-        {
-          structure: NonNullable<(typeof data)[number]["structure_data"]>;
-          scores: number[];
-          notes: string[];
-        }
-      >();
-      for (const row of data ?? []) {
-        if (!row.structure_data || !row.structure_id) continue;
-        const key = row.structure_id;
-        if (!map.has(key)) {
-          map.set(key, { structure: row.structure_data, scores: [], notes: [] });
-        }
-        const e = map.get(key)!;
+      const [{ data: matches, error: e1 }, { data: structures, error: e2 }] = await Promise.all([
+        supabase
+          .from("crop_structure_match")
+          .select("crop_id, structure_id, suitability_score, notes")
+          .in("crop_id", cropIds),
+        supabase.from("structure_data").select("*"),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+      const byId = new Map((structures ?? []).map((s) => [s.structure_id, s]));
+      const agg = new Map<string, { scores: number[]; notes: string[] }>();
+      for (const row of matches ?? []) {
+        if (!row.structure_id) continue;
+        if (!agg.has(row.structure_id)) agg.set(row.structure_id, { scores: [], notes: [] });
+        const e = agg.get(row.structure_id)!;
         if (row.suitability_score != null) e.scores.push(row.suitability_score);
         if (row.notes) e.notes.push(row.notes);
       }
-      return Array.from(map.values())
-        .map((e) => ({
-          structure: e.structure,
-          avgScore: e.scores.length
-            ? Math.round(e.scores.reduce((a, b) => a + b, 0) / e.scores.length)
-            : 0,
-          notes: e.notes,
-        }))
+      return Array.from(agg.entries())
+        .map(([sid, e]) => {
+          const s = byId.get(sid);
+          if (!s) return null;
+          return {
+            structure: s,
+            avgScore: e.scores.length
+              ? Math.round(e.scores.reduce((a, b) => a + b, 0) / e.scores.length)
+              : 0,
+            notes: e.notes,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null)
         .sort((a, b) => b.avgScore - a.avgScore);
     },
   });
