@@ -130,7 +130,7 @@ export const materialsForStructureQuery = (structureId: string | null) =>
         return n === "ALL" || n.includes(structureId!);
       }).map((m) => ({
         ...m,
-        material_categories: categoriesById.get(m.category_id) ?? null,
+        material_categories: m.category_id ? (categoriesById.get(m.category_id) ?? null) : null,
       }));
     },
   });
