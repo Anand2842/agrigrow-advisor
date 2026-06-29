@@ -112,15 +112,26 @@ export const materialsForStructureQuery = (structureId: string | null) =>
     queryKey: ["materials", structureId],
     enabled: !!structureId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("materials")
-        .select("*, material_categories(category_name)")
-        .eq("item_type", "essential");
-      if (error) throw error;
-      return (data ?? []).filter((m: { needed_for_structures: string | null }) => {
+      const [{ data: materials, error: materialsError }, { data: categories, error: categoriesError }] =
+        await Promise.all([
+          supabase.from("materials").select("*").eq("item_type", "essential"),
+          supabase.from("material_categories").select("category_id, category_name"),
+        ]);
+
+      if (materialsError) throw materialsError;
+      if (categoriesError) throw categoriesError;
+
+      const categoriesById = new Map(
+        (categories ?? []).map((c) => [c.category_id, { category_name: c.category_name }]),
+      );
+
+      return (materials ?? []).filter((m: { needed_for_structures: string | null }) => {
         const n = m.needed_for_structures ?? "";
         return n === "ALL" || n.includes(structureId!);
-      });
+      }).map((m) => ({
+        ...m,
+        material_categories: m.category_id ? (categoriesById.get(m.category_id) ?? null) : null,
+      }));
     },
   });
 
