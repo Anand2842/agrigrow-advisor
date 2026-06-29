@@ -20,7 +20,7 @@ export const districtsByStateQuery = (state: StateCode | null) =>
       const { data, error } = await supabase
         .from("district_climate")
         .select("district_id, district_name, agro_climatic_zone, division_name")
-        .eq("state", STATE_NAMES[state!])
+        .eq("state", state!)
         .order("district_name");
       if (error) throw error;
       return data ?? [];
