@@ -86,7 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Data-driven advice for protected farming structures, BOM costing, and government subsidies across Uttar Pradesh, Madhya Pradesh, Maharashtra, Uttarakhand, and Himachal Pradesh.",
       },
-      { property: "og:title", content: "Protected Cultivation Advisory" },
+      { property: "og:title", content: "Protected Cultivation Advisory — UP · MP · MH · UK · HP" },
       {
         property: "og:description",
         content:
@@ -94,6 +94,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Protected Cultivation Advisory — UP · MP · MH · UK · HP" },
+      { name: "description", content: "AgriGrow Advisor provides data-driven protected cultivation advice for Indian farmers." },
+      { property: "og:description", content: "AgriGrow Advisor provides data-driven protected cultivation advice for Indian farmers." },
+      { name: "twitter:description", content: "AgriGrow Advisor provides data-driven protected cultivation advice for Indian farmers." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f6f873ee-04b8-430c-aaad-9e52588d604a/id-preview-6987e2b1--6ede9244-0799-4d4a-b3ce-cc8564223417.lovable.app-1782770601532.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f6f873ee-04b8-430c-aaad-9e52588d604a/id-preview-6987e2b1--6ede9244-0799-4d4a-b3ce-cc8564223417.lovable.app-1782770601532.png" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
