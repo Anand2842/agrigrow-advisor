@@ -16,8 +16,10 @@ export const Route = createFileRoute("/crop")({
 });
 
 function CropPage() {
-  const { state, cropIds, toggleCrop } = useWizard();
+  const { state, cropIds, toggleCrop, siteElevation, siteSlope, manualAnswers } = useWizard();
   const crops = useQuery(cropsAllQuery());
+
+  const soilType = manualAnswers.soilType;
 
   return (
     <>
@@ -35,26 +37,50 @@ function CropPage() {
           </span>
         </div>
 
+        {(siteElevation != null || soilType) && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {siteElevation != null && siteElevation > 1500 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs text-blue-700">
+                High altitude ({siteElevation}m) — some crops may not thrive
+              </span>
+            )}
+            {soilType && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs text-amber-700">
+                Soil: {soilType}
+              </span>
+            )}
+            {siteSlope != null && siteSlope > 5 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs text-red-700">
+                Slope: {siteSlope}% — consider erosion-resistant crops
+              </span>
+            )}
+          </div>
+        )}
+
         {crops.isLoading && <p className="mt-8 text-muted-foreground">Loading crops…</p>}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(crops.data ?? []).map((c) => {
             const selected = cropIds.includes(c.crop_id);
             const seasonKey =
-              state === "UP" ? "planting_season_up" : state === "MP" ? "planting_season_mp" : state === "MH" ? "planting_season_mh" : null;
+              state === "UP" ? "planting_season_up" : state === "MP" ? "planting_season_mp" : state === "MH" ? "planting_season_mh" : "planting_season_up";
             const season = seasonKey ? (c as Record<string, unknown>)[seasonKey] : null;
             const priceKey =
-              state === "UP" ? "msp_or_market_rate_up" : state === "MP" ? "msp_or_market_rate_mp" : state === "MH" ? "msp_or_market_rate_mh" : null;
+              state === "UP" ? "msp_or_market_rate_up" : state === "MP" ? "msp_or_market_rate_mp" : state === "MH" ? "msp_or_market_rate_mh" : "msp_or_market_rate_up";
             const price = priceKey ? (c as Record<string, unknown>)[priceKey] : null;
+
+            const isHighAltitudeIncompatible = siteElevation != null && siteElevation > 2000 &&
+              (c.crop_id === "C011" || c.crop_id === "C009");
 
             return (
               <button
                 key={c.crop_id}
                 type="button"
                 onClick={() => toggleCrop(c.crop_id)}
+                disabled={isHighAltitudeIncompatible}
                 className={`relative rounded-xl border bg-card p-4 text-left shadow-sm transition hover:border-primary hover:shadow ${
                   selected ? "ring-2 ring-primary border-primary" : ""
-                }`}
+                } ${isHighAltitudeIncompatible ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {selected && (
                   <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">

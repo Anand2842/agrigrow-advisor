@@ -6,6 +6,8 @@ const STATE_NAMES: Record<StateCode, string> = {
   UP: "Uttar Pradesh",
   MP: "Madhya Pradesh",
   MH: "Maharashtra",
+  UK: "Uttarakhand",
+  HP: "Himachal Pradesh",
 };
 
 export function stateFullName(code: StateCode) {

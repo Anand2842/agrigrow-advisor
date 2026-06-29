@@ -11,12 +11,18 @@ export interface MaterialRow {
   tier_a_price_up: number | null;
   tier_a_price_mp: number | null;
   tier_a_price_mh: number | null;
+  tier_a_price_uk: number | null;
+  tier_a_price_hp: number | null;
   tier_b_price_up: number | null;
   tier_b_price_mp: number | null;
   tier_b_price_mh: number | null;
+  tier_b_price_uk: number | null;
+  tier_b_price_hp: number | null;
   tier_c_price_up: number | null;
   tier_c_price_mp: number | null;
   tier_c_price_mh: number | null;
+  tier_c_price_uk: number | null;
+  tier_c_price_hp: number | null;
   tier_a_spec: string | null;
   tier_b_spec: string | null;
   tier_c_spec: string | null;
@@ -49,11 +55,18 @@ export interface BOMResult {
   totalCost: number;
   byCategory: { category: string; total: number }[];
   warnings: string[];
+  adjustments: { label: string; factor: number; reason: string }[];
 }
 
 function priceFor(m: MaterialRow, tier: Tier, state: StateCode): number {
   const key = `tier_${tier.toLowerCase()}_price_${state.toLowerCase()}` as keyof MaterialRow;
-  const v = m[key] as number | null;
+  let v = m[key] as number | null;
+  // Fallback: UK/HP use UP price + 15% hilly terrain premium
+  if ((v === null || v === 0) && (state === "UK" || state === "HP")) {
+    const fallback = `tier_${tier.toLowerCase()}_price_up` as keyof MaterialRow;
+    v = m[fallback] as number | null;
+    if (v) v = v * 1.15;
+  }
   return v ?? 0;
 }
 
@@ -78,15 +91,53 @@ export function calculateBOM(
   state: StateCode,
   tier: Tier,
   climate?: DistrictClimateLite | null,
+  siteData?: {
+    slope_percent?: number | null;
+    road_distance_m?: number | null;
+    water_distance_m?: number | null;
+  } | null,
 ): BOMResult {
   const lines: BOMLine[] = [];
   const globalWarnings = new Set<string>();
+  const adjustments: { label: string; factor: number; reason: string }[] = [];
   const corrosion = climate?.coastal_corrosion_factor ?? 1;
   const fogJan = climate?.fog_days_jan ?? 0;
   const fogDec = climate?.fog_days_dec ?? 0;
   const isMarathwada = (climate?.agro_climatic_zone ?? "")
     .toLowerCase()
     .includes("marathwada");
+
+  const slope = siteData?.slope_percent ?? 0;
+  const roadDist = siteData?.road_distance_m ?? 0;
+  const waterDist = siteData?.water_distance_m ?? 0;
+
+  let slopeFactor = 1;
+  if (slope > 10) {
+    slopeFactor = 1.2;
+    adjustments.push({ label: "Steep slope foundation", factor: 1.2, reason: `Slope ${slope}% — reinforced foundation +20%` });
+    globalWarnings.add("Steep slope: foundation costs increased by 20%");
+  } else if (slope > 5) {
+    slopeFactor = 1.1;
+    adjustments.push({ label: "Slope adjustment", factor: 1.1, reason: `Slope ${slope}% — enhanced foundation +10%` });
+    globalWarnings.add("Moderate slope: foundation costs increased by 10%");
+  }
+
+  let transportFactor = 1;
+  if (roadDist > 1000) {
+    transportFactor = 1.1;
+    adjustments.push({ label: "Remote location", factor: 1.1, reason: `Road ${roadDist}m away — transport surcharge +10%` });
+    globalWarnings.add("Remote location: material transport costs increased by 10%");
+  } else if (roadDist > 500) {
+    transportFactor = 1.05;
+    adjustments.push({ label: "Transport distance", factor: 1.05, reason: `Road ${roadDist}m away — transport +5%` });
+  }
+
+  let irrigationFactor = 1;
+  if (waterDist > 1000) {
+    irrigationFactor = 1.15;
+    adjustments.push({ label: "Irrigation extension", factor: 1.15, reason: `Water ${waterDist}m — extra piping costs +15%` });
+    globalWarnings.add("Distant water source: irrigation pipe costs increased by 15%");
+  }
 
   for (const m of materials) {
     const baseQty = quantityFor(m.quantity_formula, areaSqm);
@@ -121,6 +172,18 @@ export function calculateBOM(
       globalWarnings.add(w);
     }
 
+    if (slope > 5 && (lcCat.includes("pipe") || lcCat.includes("column") || lcName.includes("foundation"))) {
+      price = price * slopeFactor;
+    }
+
+    if (roadDist > 500 && lcCat.includes("pipe")) {
+      price = price * transportFactor;
+    }
+
+    if (waterDist > 1000 && (lcName.includes("pipe") || lcName.includes("drip") || lcName.includes("irrigation"))) {
+      price = price * irrigationFactor;
+    }
+
     const total = qty * price;
     lines.push({
       material_id: m.material_id,
@@ -143,7 +206,7 @@ export function calculateBOM(
     .map(([category, total]) => ({ category, total }))
     .sort((a, b) => b.total - a.total);
 
-  return { lines, totalCost, byCategory, warnings: Array.from(globalWarnings) };
+  return { lines, totalCost, byCategory, warnings: Array.from(globalWarnings), adjustments };
 }
 
 export function formatINR(n: number): string {

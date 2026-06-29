@@ -1,15 +1,20 @@
+import { useState, useCallback, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useWizard, type StateCode } from "@/lib/wizard-store";
 import { districtsByStateQuery, districtClimateQuery, stateFullName } from "@/lib/queries";
+import { analyzeSite, type SiteIntelligence } from "@/lib/api/site-intelligence";
 import { WizardSteps } from "@/components/wizard-steps";
-import { ArrowRight, Cloud, Droplets, Wind, Thermometer } from "lucide-react";
+import { FieldMap } from "@/components/FieldMap";
+import { ConfirmationCards } from "@/components/ConfirmationCards";
+import { SevenQuestions, type ManualAnswers } from "@/components/SevenQuestions";
+import { ArrowRight, Cloud, Droplets, Wind, Thermometer, MapPin, ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/district")({
   head: () => ({
     meta: [
-      { title: "Select District — PCA" },
-      { name: "description", content: "Select your state and district to begin." },
+      { title: "Site Analysis — PCA" },
+      { name: "description", content: "Pin your field location on the map to begin." },
     ],
   }),
   component: DistrictPage,
@@ -19,7 +24,11 @@ const STATES: { code: StateCode; label: string }[] = [
   { code: "UP", label: "Uttar Pradesh" },
   { code: "MP", label: "Madhya Pradesh" },
   { code: "MH", label: "Maharashtra" },
+  { code: "UK", label: "Uttarakhand" },
+  { code: "HP", label: "Himachal Pradesh" },
 ];
+
+type Step = "map" | "confirm" | "questions" | "manual";
 
 function avg(...vals: (number | null | undefined)[]) {
   const xs = vals.filter((v): v is number => typeof v === "number");
@@ -28,59 +37,180 @@ function avg(...vals: (number | null | undefined)[]) {
 }
 
 function DistrictPage() {
-  const { state, districtId, districtName, setState, setDistrict } = useWizard();
+  const wizard = useWizard();
+  const {
+    state, districtId, districtName,
+    siteLat, siteLon, sitePolygon, siteIntelligenceComplete,
+    setState, setDistrict, setSiteLocation, setSitePolygon,
+    setSiteTerrain, setSiteInfrastructure, setSiteAreaSqm,
+    setSiteConfidence, setSiteWarnings, setManualAnswers, markSiteComplete,
+  } = wizard;
+
+  const [step, setStep] = useState<Step>(
+    siteIntelligenceComplete ? "confirm" : "map",
+  );
+  const [siteData, setSiteData] = useState<SiteIntelligence | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showManual, setShowManual] = useState(false);
+  const [poly, setPoly] = useState<[number, number][] | null>(null);
+
   const districts = useQuery(districtsByStateQuery(state));
   const climate = useQuery(districtClimateQuery(districtId));
+
+  const handleLocationSelect = useCallback(async (lat: number, lon: number) => {
+    setSiteLocation(lat, lon);
+    setIsAnalyzing(true);
+    try {
+      const data = await analyzeSite(lat, lon, poly);
+      setSiteData(data);
+      setSitePolygon(poly);
+
+      if (data.location.stateCode) {
+        setState(data.location.stateCode as StateCode);
+      }
+      if (data.location.districtId) {
+        setDistrict(data.location.districtId, data.location.district);
+      }
+
+      setSiteTerrain(data.terrain.elevation_m, data.terrain.slope_percent, data.terrain.aspect);
+      setSiteInfrastructure(data.infrastructure as unknown as Record<string, unknown>);
+      setSiteAreaSqm(data.area_sqm);
+      setSiteConfidence(data.confidence);
+      setSiteWarnings(data.warnings);
+
+      setStep("confirm");
+    } catch {
+      setIsAnalyzing(false);
+    }
+  }, [poly, setState, setDistrict, setSiteLocation, setSitePolygon, setSiteTerrain, setSiteInfrastructure, setSiteAreaSqm, setSiteConfidence, setSiteWarnings]);
+
+  const handlePolygonDraw = useCallback((polygon: [number, number][]) => {
+    setPoly(polygon);
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    setStep("questions");
+  }, []);
+
+  const handleQuestionsComplete = useCallback((answers: ManualAnswers) => {
+    setManualAnswers(answers);
+    markSiteComplete();
+    setStep("map");
+  }, [setManualAnswers, markSiteComplete]);
+
+  const handleEditLocation = useCallback(() => {
+    setShowManual(true);
+  }, []);
+
+  const handleManualDistrictSelect = useCallback((id: string | null, name: string | null) => {
+    setDistrict(id, name);
+  }, [setDistrict]);
 
   return (
     <>
       <WizardSteps />
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="text-3xl font-bold">Select your district</h1>
+        <h1 className="text-3xl font-bold">Pin your field location</h1>
         <p className="mt-1 text-muted-foreground">
-          We use district-level climate data to recommend the right structure.
+          Click on the map to drop a pin. We'll auto-detect your district, terrain, and nearby infrastructure.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">State</span>
-            <select
-              className="h-10 rounded-md border bg-background px-3 text-sm"
-              value={state ?? ""}
-              onChange={(e) => setState((e.target.value || null) as StateCode | null)}
-            >
-              <option value="">Choose a state…</option>
-              {STATES.map((s) => (
-                <option key={s.code} value={s.code}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
+        {!siteIntelligenceComplete && (
+          <div className="mt-6">
+            <FieldMap
+              onLocationSelect={handleLocationSelect}
+              onPolygonDraw={handlePolygonDraw}
+              initialCenter={siteLat && siteLon ? [siteLat, siteLon] : undefined}
+              initialZoom={siteLat && siteLon ? 14 : 5}
+            />
+          </div>
+        )}
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">District</span>
-            <select
-              className="h-10 rounded-md border bg-background px-3 text-sm disabled:opacity-50"
-              value={districtId ?? ""}
-              disabled={!state || districts.isLoading}
-              onChange={(e) => {
-                const id = e.target.value || null;
-                const name = districts.data?.find((d) => d.district_id === id)?.district_name ?? null;
-                setDistrict(id, name);
-              }}
-            >
-              <option value="">
-                {state ? (districts.isLoading ? "Loading…" : "Choose a district…") : "Pick a state first"}
-              </option>
-              {(districts.data ?? []).map((d) => (
-                <option key={d.district_id} value={d.district_id}>
-                  {d.district_name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        {isAnalyzing && (
+          <div className="mt-6 flex items-center gap-3 rounded-lg border bg-card p-4">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <span className="text-sm text-muted-foreground">
+              Analyzing location — checking elevation, infrastructure, and district...
+            </span>
+          </div>
+        )}
+
+        {step === "confirm" && siteData && (
+          <div className="mt-6">
+            <ConfirmationCards
+              siteData={siteData}
+              onConfirm={handleConfirm}
+              onEditLocation={handleEditLocation}
+            />
+          </div>
+        )}
+
+        {step === "questions" && (
+          <div className="mt-6">
+            <SevenQuestions
+              onComplete={handleQuestionsComplete}
+              initialAnswers={wizard.manualAnswers}
+            />
+          </div>
+        )}
+
+        {showManual && (
+          <div className="mt-6 rounded-xl border bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-semibold mb-4">Select Location Manually</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">State</span>
+                <select
+                  className="h-10 rounded-md border bg-background px-3 text-sm"
+                  value={state ?? ""}
+                  onChange={(e) => setState((e.target.value || null) as StateCode | null)}
+                >
+                  <option value="">Choose a state...</option>
+                  {STATES.map((s) => (
+                    <option key={s.code} value={s.code}>{s.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">District</span>
+                <select
+                  className="h-10 rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+                  value={districtId ?? ""}
+                  disabled={!state || districts.isLoading}
+                  onChange={(e) => {
+                    const id = e.target.value || null;
+                    const name = districts.data?.find((d) => d.district_id === id)?.district_name ?? null;
+                    handleManualDistrictSelect(id, name);
+                  }}
+                >
+                  <option value="">
+                    {state ? (districts.isLoading ? "Loading..." : "Choose a district...") : "Pick a state first"}
+                  </option>
+                  {(districts.data ?? []).map((d) => (
+                    <option key={d.district_id} value={d.district_id}>{d.district_name}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => {
+                  if (districtId) {
+                    markSiteComplete();
+                    setShowManual(false);
+                    setStep("map");
+                  }
+                }}
+                disabled={!districtId}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+              >
+                Confirm Selection
+              </button>
+            </div>
+          </div>
+        )}
 
         {climate.data && (
           <div className="mt-8 rounded-xl border bg-card p-6 shadow-sm">
@@ -178,12 +308,21 @@ function DistrictPage() {
           </div>
         )}
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex items-center justify-between">
+          <button
+            onClick={() => setShowManual(!showManual)}
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <MapPin className="h-4 w-4" />
+            {showManual ? "Hide manual selection" : "Enter location manually"}
+            <ChevronDown className={`h-4 w-4 transition-transform ${showManual ? "rotate-180" : ""}`} />
+          </button>
+
           <Link
             to="/crop"
-            disabled={!districtId}
+            disabled={!districtId || !siteIntelligenceComplete}
             className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 aria-disabled:pointer-events-none aria-disabled:opacity-50"
-            aria-disabled={!districtId}
+            aria-disabled={!districtId || !siteIntelligenceComplete}
           >
             Next: Select Crop <ArrowRight className="h-4 w-4" />
           </Link>

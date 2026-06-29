@@ -2,7 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 
 const STEPS = [
-  { to: "/district", label: "District" },
+  { to: "/district", label: "Site Analysis" },
   { to: "/crop", label: "Crop" },
   { to: "/recommendations", label: "Structure" },
   { to: "/bom", label: "BOM" },

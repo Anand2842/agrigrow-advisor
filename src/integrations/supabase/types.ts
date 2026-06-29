@@ -1004,6 +1004,8 @@ export type Database = {
           tier_a_price_mh: number | null
           tier_a_price_mp: number | null
           tier_a_price_up: number | null
+          tier_a_price_uk: number | null
+          tier_a_price_hp: number | null
           tier_a_spec: string | null
           tier_b_brand_examples: string | null
           tier_b_downgrade_consequence: string | null
@@ -1011,6 +1013,8 @@ export type Database = {
           tier_b_price_mh: number | null
           tier_b_price_mp: number | null
           tier_b_price_up: number | null
+          tier_b_price_uk: number | null
+          tier_b_price_hp: number | null
           tier_b_spec: string | null
           tier_c_brand_examples: string | null
           tier_c_downgrade_consequence: string | null
@@ -1018,6 +1022,8 @@ export type Database = {
           tier_c_price_mh: number | null
           tier_c_price_mp: number | null
           tier_c_price_up: number | null
+          tier_c_price_uk: number | null
+          tier_c_price_hp: number | null
           tier_c_spec: string | null
           transport_cost_per_km_per_ton: number | null
           transport_mode: string | null
@@ -1044,6 +1050,8 @@ export type Database = {
           tier_a_price_mh?: number | null
           tier_a_price_mp?: number | null
           tier_a_price_up?: number | null
+          tier_a_price_uk?: number | null
+          tier_a_price_hp?: number | null
           tier_a_spec?: string | null
           tier_b_brand_examples?: string | null
           tier_b_downgrade_consequence?: string | null
@@ -1051,6 +1059,8 @@ export type Database = {
           tier_b_price_mh?: number | null
           tier_b_price_mp?: number | null
           tier_b_price_up?: number | null
+          tier_b_price_uk?: number | null
+          tier_b_price_hp?: number | null
           tier_b_spec?: string | null
           tier_c_brand_examples?: string | null
           tier_c_downgrade_consequence?: string | null
@@ -1058,6 +1068,8 @@ export type Database = {
           tier_c_price_mh?: number | null
           tier_c_price_mp?: number | null
           tier_c_price_up?: number | null
+          tier_c_price_uk?: number | null
+          tier_c_price_hp?: number | null
           tier_c_spec?: string | null
           transport_cost_per_km_per_ton?: number | null
           transport_mode?: string | null
@@ -1084,6 +1096,8 @@ export type Database = {
           tier_a_price_mh?: number | null
           tier_a_price_mp?: number | null
           tier_a_price_up?: number | null
+          tier_a_price_uk?: number | null
+          tier_a_price_hp?: number | null
           tier_a_spec?: string | null
           tier_b_brand_examples?: string | null
           tier_b_downgrade_consequence?: string | null
@@ -1091,6 +1105,8 @@ export type Database = {
           tier_b_price_mh?: number | null
           tier_b_price_mp?: number | null
           tier_b_price_up?: number | null
+          tier_b_price_uk?: number | null
+          tier_b_price_hp?: number | null
           tier_b_spec?: string | null
           tier_c_brand_examples?: string | null
           tier_c_downgrade_consequence?: string | null
@@ -1098,6 +1114,8 @@ export type Database = {
           tier_c_price_mh?: number | null
           tier_c_price_mp?: number | null
           tier_c_price_up?: number | null
+          tier_c_price_uk?: number | null
+          tier_c_price_hp?: number | null
           tier_c_spec?: string | null
           transport_cost_per_km_per_ton?: number | null
           transport_mode?: string | null

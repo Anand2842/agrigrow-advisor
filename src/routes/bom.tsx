@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useWizard, type Tier } from "@/lib/wizard-store";
 import {
   materialsForStructureQuery,
@@ -32,6 +32,9 @@ function BOMPage() {
     setArea,
     setTier,
     setStructure,
+    siteSlope,
+    siteAreaSqm,
+    siteInfrastructure,
   } = useWizard();
 
   const materials = useQuery(materialsForStructureQuery(structureId));
@@ -39,6 +42,16 @@ function BOMPage() {
   const structures = useQuery(allStructuresQuery());
 
   const selectedStructure = structures.data?.find((s) => s.structure_id === structureId);
+
+  const infra = siteInfrastructure as Record<string, unknown> | null;
+  const roadNearest = (infra?.roads as { nearest?: { distance_m?: number } } | null)?.nearest;
+  const waterNearest = (infra?.water as { nearest?: { distance_m?: number } } | null)?.nearest;
+
+  useEffect(() => {
+    if (siteAreaSqm && areaSqm === 1000) {
+      setArea(siteAreaSqm);
+    }
+  }, [siteAreaSqm]);
 
   const bom = useMemo(() => {
     if (!materials.data || !state) return null;
@@ -48,8 +61,13 @@ function BOMPage() {
       state,
       tier,
       climate.data as DistrictClimateLite | null,
+      {
+        slope_percent: siteSlope,
+        road_distance_m: roadNearest?.distance_m,
+        water_distance_m: waterNearest?.distance_m,
+      },
     );
-  }, [materials.data, state, areaSqm, tier, climate.data]);
+  }, [materials.data, state, areaSqm, tier, climate.data, siteSlope, roadNearest?.distance_m, waterNearest?.distance_m]);
 
   return (
     <>
@@ -148,6 +166,24 @@ function BOMPage() {
               <ul className="mt-2 list-inside list-disc space-y-0.5 text-sm">
                 {bom.warnings.map((w) => (
                   <li key={w}>{w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {bom && bom.adjustments.length > 0 && (
+            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-blue-800">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Site-Based Cost Adjustments
+              </div>
+              <ul className="mt-2 space-y-1 text-sm text-blue-700">
+                {bom.adjustments.map((a, i) => (
+                  <li key={i}>
+                    {a.reason} — overall impact: {((a.factor - 1) * 100).toFixed(0)}% increase
+                  </li>
                 ))}
               </ul>
             </div>

@@ -25,13 +25,17 @@ function costRange(structure: Record<string, unknown>, state: StateCode | null) 
 }
 
 function RecommendationsPage() {
-  const { cropIds, state, structureId, setStructure } = useWizard();
+  const { cropIds, state, structureId, setStructure, siteSlope, siteElevation, siteInfrastructure } = useWizard();
   const fromCrops = useQuery(structuresForCropsQuery(cropIds));
   const all = useQuery(allStructuresQuery());
 
   const [minScore, setMinScore] = useState(0);
   const [maxBudget, setMaxBudget] = useState<number>(0);
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
+
+  const infra = siteInfrastructure as Record<string, unknown> | null;
+  const roadNearest = (infra?.roads as { nearest?: { distance_m?: number } } | null)?.nearest;
+  const waterNearest = (infra?.water as { nearest?: { distance_m?: number } } | null)?.nearest;
 
   const items = useMemo(() => {
     if (cropIds.length > 0 && fromCrops.data) {
@@ -123,6 +127,31 @@ function RecommendationsPage() {
             />
           </label>
         </div>
+
+        {(siteSlope != null || roadNearest || waterNearest) && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {siteSlope != null && siteSlope > 8 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs text-red-700">
+                Steep slope ({siteSlope}%) — flat-ground structures may need modification
+              </span>
+            )}
+            {siteElevation != null && siteElevation > 1500 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs text-blue-700">
+                High altitude ({siteElevation}m) — insulated structures recommended
+              </span>
+            )}
+            {roadNearest?.distance_m != null && roadNearest.distance_m > 500 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs text-amber-700">
+                Road {roadNearest.distance_m}m away — transport cost +5-10%
+              </span>
+            )}
+            {waterNearest?.distance_m != null && waterNearest.distance_m > 1000 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs text-cyan-700">
+                Water {waterNearest.distance_m}m away — irrigation pipe cost higher
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {filtered.map((it) => {

@@ -80,11 +80,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Protected Cultivation Advisory — UP · MP · Maharashtra" },
+      { title: "Protected Cultivation Advisory — UP · MP · MH · UK · HP" },
       {
         name: "description",
         content:
-          "Data-driven advice for protected farming structures, BOM costing, and government subsidies across Uttar Pradesh, Madhya Pradesh, and Maharashtra.",
+          "Data-driven advice for protected farming structures, BOM costing, and government subsidies across Uttar Pradesh, Madhya Pradesh, Maharashtra, Uttarakhand, and Himachal Pradesh.",
       },
       { property: "og:title", content: "Protected Cultivation Advisory" },
       {

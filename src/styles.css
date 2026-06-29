@@ -108,6 +108,12 @@
   }
 }
 
+@import "leaflet/dist/leaflet.css";
+
+/* Leaflet container fix */
+.leaflet-container { width: 100%; height: 500px; z-index: 1; border-radius: 0.5rem; }
+.leaflet-popup-content-wrapper { border-radius: 0.5rem; }
+
 @media print {
   .no-print { display: none !important; }
   .print-area { box-shadow: none !important; }

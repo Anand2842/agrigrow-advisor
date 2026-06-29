@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Pick your district & crops to get structure recommendations, BOM cost, and subsidy estimates for protected farming in UP, MP, and Maharashtra.",
+          "Pick your district & crops to get structure recommendations, BOM cost, and subsidy estimates for protected farming in UP, MP, Maharashtra, Uttarakhand, and Himachal Pradesh.",
       },
     ],
   }),
@@ -21,7 +21,7 @@ function Index() {
       <section className="border-b bg-gradient-to-b from-primary/10 via-background to-background">
         <div className="mx-auto max-w-5xl px-4 py-20 text-center">
           <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            For farmers in UP, MP & Maharashtra
+            For farmers in UP, MP, Maharashtra, Uttarakhand & HP
           </span>
           <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">
             Protected Cultivation Advisory
