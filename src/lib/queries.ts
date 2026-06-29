@@ -77,7 +77,7 @@ export const structuresForCropsQuery = (cropIds: string[]) =>
         }
       >();
       for (const row of data ?? []) {
-        if (!row.structure_data) continue;
+        if (!row.structure_data || !row.structure_id) continue;
         const key = row.structure_id;
         if (!map.has(key)) {
           map.set(key, { structure: row.structure_data, scores: [], notes: [] });
