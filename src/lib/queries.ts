@@ -118,7 +118,7 @@ export const materialsForStructureQuery = (structureId: string | null) =>
         .select("*, material_categories(category_name)")
         .eq("item_type", "essential");
       if (error) throw error;
-      return (data ?? []).filter((m) => {
+      return (data ?? []).filter((m: { needed_for_structures: string | null }) => {
         const n = m.needed_for_structures ?? "";
         return n === "ALL" || n.includes(structureId!);
       });
