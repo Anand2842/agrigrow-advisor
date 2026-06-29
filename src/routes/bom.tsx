@@ -124,7 +124,13 @@ function BOMPage() {
             </p>
           </div>
 
-          {!bom && (
+          {materials.isError && (
+            <div className="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+              Could not load materials. {materials.error.message}
+            </div>
+          )}
+
+          {!bom && !materials.isError && (
             <p className="text-muted-foreground">
               {!state
                 ? "Pick a state on the District page first."
