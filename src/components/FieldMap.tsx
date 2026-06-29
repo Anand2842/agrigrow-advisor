@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 interface FieldMapProps {
   onLocationSelect: (lat: number, lon: number) => void;
@@ -16,58 +14,76 @@ export function FieldMap({
   initialZoom = 5,
 }: FieldMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
-  const polygonPointsRef = useRef<L.LatLng[]>([]);
-  const polygonLayerRef = useRef<L.Polygon | null>(null);
+  const mapInstanceRef = useRef<any | null>(null);
+  const markerRef = useRef<any | null>(null);
+  const polygonPointsRef = useRef<any[]>([]);
+  const polygonLayerRef = useRef<any | null>(null);
   const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
   const [polygonPoints, setPolygonPoints] = useState<[number, number][]>([]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    const map = L.map(mapRef.current, {
-      center: initialCenter,
-      zoom: initialZoom,
-      zoomControl: true,
-    });
+    let cancelled = false;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
-    }).addTo(map);
+    const initMap = async () => {
+      const L = (await import("leaflet")).default;
+      await import("leaflet/dist/leaflet.css");
 
-    map.on("click", (e: L.LeafletMouseEvent) => {
-      if (isDrawingPolygon) {
-        handlePolygonClick(e.latlng);
-      } else {
-        handlePinClick(e.latlng);
-      }
-    });
+      if (cancelled || !mapRef.current) return;
 
-    mapInstanceRef.current = map;
+      const map = L.map(mapRef.current, {
+        center: initialCenter,
+        zoom: initialZoom,
+        zoomControl: true,
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(map);
+
+      map.on("click", (e: any) => {
+        if (isDrawingPolygon) {
+          handlePolygonClick(e.latlng, L);
+        } else {
+          handlePinClick(e.latlng, L);
+        }
+      });
+
+      mapInstanceRef.current = map;
+    };
+
+    initMap();
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
+      cancelled = true;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
     };
   }, []);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    map.off();
-    map.on("click", (e: L.LeafletMouseEvent) => {
+
+    const handler = async (e: any) => {
+      const L = (await import("leaflet")).default;
       if (isDrawingPolygon) {
-        handlePolygonClick(e.latlng);
+        handlePolygonClick(e.latlng, L);
       } else {
-        handlePinClick(e.latlng);
+        handlePinClick(e.latlng, L);
       }
-    });
+    };
+
+    map.off("click");
+    map.on("click", handler);
   }, [isDrawingPolygon]);
 
   const handlePinClick = useCallback(
-    (latlng: L.LatLng) => {
+    async (latlng: any, L: any) => {
       const map = mapInstanceRef.current;
       if (!map) return;
 
@@ -92,12 +108,12 @@ export function FieldMap({
   );
 
   const handlePolygonClick = useCallback(
-    (latlng: L.LatLng) => {
+    async (latlng: any, L: any) => {
       const map = mapInstanceRef.current;
       if (!map) return;
 
       polygonPointsRef.current.push(latlng);
-      const pts: [number, number][] = polygonPointsRef.current.map((p) => [p.lat, p.lng]);
+      const pts: [number, number][] = polygonPointsRef.current.map((p: any) => [p.lat, p.lng]);
       setPolygonPoints(pts);
 
       if (polygonLayerRef.current) {
@@ -110,13 +126,13 @@ export function FieldMap({
           fillColor: "#2563EB",
           fillOpacity: 0.15,
           weight: 2,
-        }).addTo(map) as unknown as L.Polygon;
+        }).addTo(map);
       } else {
         polygonLayerRef.current = L.polyline(pts, {
           color: "#2563EB",
           weight: 2,
           dashArray: "5,5",
-        }).addTo(map) as unknown as L.Polygon;
+        }).addTo(map);
       }
 
       L.circleMarker(latlng, {
@@ -131,7 +147,7 @@ export function FieldMap({
 
   const handleCompletePolygon = useCallback(() => {
     if (polygonPointsRef.current.length >= 3 && onPolygonDraw) {
-      const pts: [number, number][] = polygonPointsRef.current.map((p) => [p.lat, p.lng]);
+      const pts: [number, number][] = polygonPointsRef.current.map((p: any) => [p.lat, p.lng]);
       onPolygonDraw(pts);
     }
     setIsDrawingPolygon(false);
@@ -157,11 +173,11 @@ export function FieldMap({
         if (map) {
           map.setView([latitude, longitude], 14);
         }
-        handlePinClick(L.latLng(latitude, longitude));
+        import("leaflet").then(({ default: L }) => {
+          handlePinClick(L.latLng(latitude, longitude), L);
+        });
       },
-      () => {
-        // Geolocation denied, ignore silently
-      },
+      () => {},
     );
   }, [handlePinClick]);
 

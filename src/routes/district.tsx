@@ -1,14 +1,17 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useWizard, type StateCode } from "@/lib/wizard-store";
 import { districtsByStateQuery, districtClimateQuery, stateFullName } from "@/lib/queries";
 import { analyzeSite, type SiteIntelligence } from "@/lib/api/site-intelligence";
 import { WizardSteps } from "@/components/wizard-steps";
-import { FieldMap } from "@/components/FieldMap";
 import { ConfirmationCards } from "@/components/ConfirmationCards";
 import { SevenQuestions, type ManualAnswers } from "@/components/SevenQuestions";
 import { ArrowRight, Cloud, Droplets, Wind, Thermometer, MapPin, ChevronDown } from "lucide-react";
+
+const FieldMap = lazy(() =>
+  import("@/components/FieldMap").then((m) => ({ default: m.FieldMap }))
+);
 
 export const Route = createFileRoute("/district")({
   head: () => ({
@@ -120,12 +123,23 @@ function DistrictPage() {
 
         {!siteIntelligenceComplete && (
           <div className="mt-6">
-            <FieldMap
-              onLocationSelect={handleLocationSelect}
-              onPolygonDraw={handlePolygonDraw}
-              initialCenter={siteLat && siteLon ? [siteLat, siteLon] : undefined}
-              initialZoom={siteLat && siteLon ? 14 : 5}
-            />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center rounded-lg border bg-muted/30" style={{ height: "500px" }}>
+                  <div className="text-center">
+                    <div className="h-8 w-8 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <p className="mt-2 text-sm text-muted-foreground">Loading map...</p>
+                  </div>
+                </div>
+              }
+            >
+              <FieldMap
+                onLocationSelect={handleLocationSelect}
+                onPolygonDraw={handlePolygonDraw}
+                initialCenter={siteLat && siteLon ? [siteLat, siteLon] : undefined}
+                initialZoom={siteLat && siteLon ? 14 : 5}
+              />
+            </Suspense>
           </div>
         )}
 
