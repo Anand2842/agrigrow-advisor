@@ -52,6 +52,12 @@ function ReportPage() {
   const selectedCrops = (crops.data ?? []).filter((c) => w.cropIds.includes(c.crop_id));
   const structure = structures.data?.find((s) => s.structure_id === w.structureId);
 
+  const infra = w.siteInfrastructure as Record<string, unknown> | null;
+  const roadNearest = (infra?.roads as { nearest?: { name?: string; distance_m?: number } } | null)?.nearest;
+  const waterNearest = (infra?.water as { nearest?: { name?: string; distance_m?: number } } | null)?.nearest;
+  const buildings = (infra?.buildings as { count?: number } | null)?.count ?? 0;
+  const settlement = (infra?.settlements as { nearest?: { name?: string; distance_m?: number } } | null)?.nearest;
+
   const bom = useMemo(() => {
     if (!materials.data || !w.state) return null;
     return calculateBOM(
@@ -60,8 +66,13 @@ function ReportPage() {
       w.state,
       w.tier,
       climate.data as DistrictClimateLite | null,
+      {
+        slope_percent: w.siteSlope,
+        road_distance_m: roadNearest?.distance_m,
+        water_distance_m: waterNearest?.distance_m,
+      },
     );
-  }, [materials.data, w.state, w.areaSqm, w.tier, climate.data]);
+  }, [materials.data, w.state, w.areaSqm, w.tier, climate.data, w.siteSlope, roadNearest?.distance_m, waterNearest?.distance_m]);
 
   const subsidyResults = useMemo(() => {
     if (!schemes.data || !w.state) return [];
@@ -81,6 +92,8 @@ function ReportPage() {
     .reduce((s, r) => s + r.estimatedAmount, 0);
   const projectCost = bom?.totalCost ?? 0;
   const farmerShare = Math.max(projectCost - totalSubsidy, 0);
+
+  const siteArea = w.siteAreaSqm ?? w.areaSqm;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -107,7 +120,7 @@ function ReportPage() {
 
         <Section n={1} title="Executive Summary">
           <p className="text-sm">
-            For a <strong>{w.areaSqm} sqm</strong> protected farming project
+            For a <strong>{siteArea} sqm</strong> protected farming project
             {structure ? (
               <>
                 {" "}using <strong>{structure.structure_name}</strong>
@@ -121,9 +134,76 @@ function ReportPage() {
             leaving a farmer contribution of{" "}
             <strong className="font-mono">{formatINR(farmerShare)}</strong>.
           </p>
+          {w.siteWarnings.length > 0 && (
+            <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <p className="text-xs font-semibold text-amber-800 mb-1">Site Warnings:</p>
+              <ul className="list-inside list-disc space-y-0.5 text-xs text-amber-700">
+                {w.siteWarnings.map((warn, i) => (
+                  <li key={i}>{warn}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Section>
 
-        <Section n={2} title="District Profile">
+        {w.siteLat && w.siteLon && (
+          <Section n={2} title="Site Intelligence">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Location</h4>
+                <dl className="space-y-1">
+                  <KV k="Coordinates" v={`${w.siteLat.toFixed(4)}, ${w.siteLon.toFixed(4)}`} />
+                  <KV k="Confidence" v={w.siteConfidence === "high" ? "High" : w.siteConfidence === "medium" ? "Medium" : "Low"} />
+                </dl>
+
+                <h4 className="font-semibold text-xs uppercase tracking-wide text-muted-foreground mt-4">Terrain</h4>
+                <dl className="space-y-1">
+                  <KV k="Elevation" v={w.siteElevation != null ? `${w.siteElevation}m` : "—"} />
+                  <KV k="Slope" v={w.siteSlope != null ? `${w.siteSlope}%` : "—"} />
+                  <KV k="Aspect" v={w.siteAspect ?? "—"} />
+                </dl>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Infrastructure</h4>
+                <dl className="space-y-1">
+                  <KV k="Nearest road" v={roadNearest ? `${roadNearest.name ?? "Road"} (${roadNearest.distance_m}m)` : "—"} />
+                  <KV k="Water source" v={waterNearest ? `${waterNearest.name ?? "Source"} (${waterNearest.distance_m}m)` : "—"} />
+                  <KV k="Buildings nearby" v={String(buildings)} />
+                  <KV k="Settlement" v={settlement ? `${settlement.name} (${settlement.distance_m}m)` : "—"} />
+                </dl>
+              </div>
+            </div>
+
+            {(w.manualAnswers.soilType || w.manualAnswers.waterSource) && (
+              <div className="mt-4 space-y-2">
+                <h4 className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Field Details (Manual)</h4>
+                <dl className="grid grid-cols-2 gap-2 text-sm">
+                  {w.manualAnswers.soilType && <KV k="Soil type" v={w.manualAnswers.soilType} />}
+                  {w.manualAnswers.waterSource && <KV k="Water source" v={w.manualAnswers.waterSource} />}
+                  {w.manualAnswers.waterQuality && <KV k="Water quality" v={w.manualAnswers.waterQuality} />}
+                  {w.manualAnswers.windbreak && <KV k="Windbreak" v={w.manualAnswers.windbreak} />}
+                  {w.manualAnswers.nearbyStructures && <KV k="Nearby structures" v={w.manualAnswers.nearbyStructures} />}
+                  {w.manualAnswers.frostPocket && <KV k="Frost pocket" v={w.manualAnswers.frostPocket} />}
+                  {w.manualAnswers.floodRisk && <KV k="Flood risk" v={w.manualAnswers.floodRisk} />}
+                </dl>
+              </div>
+            )}
+
+            {bom && bom.adjustments.length > 0 && (
+              <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-3">
+                <p className="text-xs font-semibold text-blue-800 mb-1">Cost Adjustments Applied:</p>
+                <ul className="list-inside list-disc space-y-0.5 text-xs text-blue-700">
+                  {bom.adjustments.map((a, i) => (
+                    <li key={i}>{a.reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Section>
+        )}
+
+        <Section n={w.siteLat ? 3 : 2} title="District Profile">
           {climate.data ? (
             <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
               <KV k="Agro-climatic zone" v={climate.data.agro_climatic_zone ?? "—"} />
@@ -138,7 +218,7 @@ function ReportPage() {
           )}
         </Section>
 
-        <Section n={3} title="Crop Recommendations">
+        <Section n={w.siteLat ? 4 : 3} title="Crop Recommendations">
           {selectedCrops.length === 0 ? (
             <p className="text-muted-foreground">No crops selected.</p>
           ) : (
@@ -156,7 +236,7 @@ function ReportPage() {
           )}
         </Section>
 
-        <Section n={4} title="Structure Recommendation">
+        <Section n={w.siteLat ? 5 : 4} title="Structure Recommendation">
           {structure ? (
             <div className="text-sm">
               <p className="font-semibold">{structure.structure_name}</p>
@@ -170,55 +250,57 @@ function ReportPage() {
           )}
         </Section>
 
-        <Section n={5} title="Bill of Materials">
+        <Section n={w.siteLat ? 6 : 5} title="Bill of Materials">
           {bom ? (
-            <table className="w-full text-xs">
-              <thead className="text-left text-muted-foreground">
-                <tr>
-                  <th className="py-1">Material</th>
-                  <th className="py-1 text-right">Qty</th>
-                  <th className="py-1 text-right">Rate</th>
-                  <th className="py-1 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bom.lines.map((l) => (
-                  <tr key={l.material_id} className="border-t">
-                    <td className="py-1">
-                      {l.material_name}
-                      {l.is_code && (
-                        <span className="ml-1 font-mono text-[10px] text-muted-foreground">
-                          ({l.is_code})
-                        </span>
-                      )}
+            <>
+              <table className="w-full text-xs">
+                <thead className="text-left text-muted-foreground">
+                  <tr>
+                    <th className="py-1">Material</th>
+                    <th className="py-1 text-right">Qty</th>
+                    <th className="py-1 text-right">Rate</th>
+                    <th className="py-1 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bom.lines.map((l) => (
+                    <tr key={l.material_id} className="border-t">
+                      <td className="py-1">
+                        {l.material_name}
+                        {l.is_code && (
+                          <span className="ml-1 font-mono text-[10px] text-muted-foreground">
+                            ({l.is_code})
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-1 text-right font-mono">
+                        {l.quantity} {l.unit}
+                      </td>
+                      <td className="py-1 text-right font-mono">{formatINR(l.unit_price)}</td>
+                      <td className="py-1 text-right font-mono font-semibold">
+                        {formatINR(l.total)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2">
+                    <td colSpan={3} className="py-2 text-right font-semibold">
+                      Total
                     </td>
-                    <td className="py-1 text-right font-mono">
-                      {l.quantity} {l.unit}
-                    </td>
-                    <td className="py-1 text-right font-mono">{formatINR(l.unit_price)}</td>
-                    <td className="py-1 text-right font-mono font-semibold">
-                      {formatINR(l.total)}
+                    <td className="py-2 text-right font-mono font-bold">
+                      {formatINR(bom.totalCost)}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2">
-                  <td colSpan={3} className="py-2 text-right font-semibold">
-                    Total
-                  </td>
-                  <td className="py-2 text-right font-mono font-bold">
-                    {formatINR(bom.totalCost)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+                </tfoot>
+              </table>
+            </>
           ) : (
             <p className="text-muted-foreground">Materials unavailable.</p>
           )}
         </Section>
 
-        <Section n={6} title="Contractor Verification Checklist">
+        <Section n={w.siteLat ? 7 : 6} title="Contractor Verification Checklist">
           <ul className="list-inside list-disc space-y-1 text-sm">
             <li>Confirm pipe gauge & galvanization (HDG g/sqm) matches Tier {w.tier} spec</li>
             <li>Verify film thickness (micron) and UV stabilization grade</li>
@@ -228,7 +310,7 @@ function ReportPage() {
           </ul>
         </Section>
 
-        <Section n={7} title="Month-by-Month Risk Calendar">
+        <Section n={w.siteLat ? 8 : 7} title="Month-by-Month Risk Calendar">
           <table className="w-full text-xs">
             <tbody>
               {RISKS.default.map((r) => (
@@ -241,7 +323,7 @@ function ReportPage() {
           </table>
         </Section>
 
-        <Section n={8} title="Subsidy Application Guide">
+        <Section n={w.siteLat ? 9 : 8} title="Subsidy Application Guide">
           {subsidyResults.length === 0 && (
             <p className="text-muted-foreground">No schemes evaluated.</p>
           )}
@@ -267,13 +349,13 @@ function ReportPage() {
           </ul>
         </Section>
 
-        <Section n={9} title="ROI Summary">
+        <Section n={w.siteLat ? 10 : 9} title="ROI Summary">
           <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
             <KV k="Project cost" v={formatINR(projectCost)} />
             <KV k="Subsidy" v={formatINR(totalSubsidy)} />
             <KV k="Farmer share" v={formatINR(farmerShare)} />
-            <KV k="Area" v={`${w.areaSqm} sqm`} />
-            <KV k="Cost / sqm" v={formatINR(Math.round(projectCost / Math.max(w.areaSqm, 1)))} />
+            <KV k="Area" v={`${siteArea} sqm`} />
+            <KV k="Cost / sqm" v={formatINR(Math.round(projectCost / Math.max(siteArea, 1)))} />
             <KV k="Tier" v={w.tier} />
           </dl>
         </Section>

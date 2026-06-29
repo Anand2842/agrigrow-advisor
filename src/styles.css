@@ -114,9 +114,15 @@
 .leaflet-container { width: 100%; height: 500px; z-index: 1; border-radius: 0.5rem; }
 .leaflet-popup-content-wrapper { border-radius: 0.5rem; }
 
+@media (max-width: 640px) {
+  .leaflet-container { height: 350px; }
+  .leaflet-control-zoom { margin-top: 40px !important; }
+}
+
 @media print {
   .no-print { display: none !important; }
   .print-area { box-shadow: none !important; }
   body { background: white !important; }
   .page-break { page-break-after: always; }
+  .leaflet-container { display: none !important; }
 }

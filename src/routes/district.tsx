@@ -53,6 +53,7 @@ function DistrictPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [poly, setPoly] = useState<[number, number][] | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const districts = useQuery(districtsByStateQuery(state));
   const climate = useQuery(districtClimateQuery(districtId));
@@ -60,6 +61,7 @@ function DistrictPage() {
   const handleLocationSelect = useCallback(async (lat: number, lon: number) => {
     setSiteLocation(lat, lon);
     setIsAnalyzing(true);
+    setApiError(null);
     try {
       const data = await analyzeSite(lat, lon, poly);
       setSiteData(data);
@@ -79,7 +81,8 @@ function DistrictPage() {
       setSiteWarnings(data.warnings);
 
       setStep("confirm");
-    } catch {
+    } catch (err) {
+      setApiError("Could not analyze location. You can select your district manually below.");
       setIsAnalyzing(false);
     }
   }, [poly, setState, setDistrict, setSiteLocation, setSitePolygon, setSiteTerrain, setSiteInfrastructure, setSiteAreaSqm, setSiteConfidence, setSiteWarnings]);
@@ -132,6 +135,18 @@ function DistrictPage() {
             <span className="text-sm text-muted-foreground">
               Analyzing location — checking elevation, infrastructure, and district...
             </span>
+          </div>
+        )}
+
+        {apiError && (
+          <div className="mt-6 rounded-lg border border-destructive bg-destructive/10 p-4">
+            <p className="text-sm text-destructive">{apiError}</p>
+            <button
+              onClick={() => setShowManual(true)}
+              className="mt-2 text-sm font-medium text-primary hover:underline"
+            >
+              Select manually →
+            </button>
           </div>
         )}
 
