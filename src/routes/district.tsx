@@ -61,14 +61,14 @@ function DistrictPage() {
   const districts = useQuery(districtsByStateQuery(state));
   const climate = useQuery(districtClimateQuery(districtId));
 
-  const handleLocationSelect = useCallback(async (lat: number, lon: number) => {
+  const handleLocationSelect = useCallback(async (lat: number, lon: number, polygon?: [number, number][] | null) => {
     setSiteLocation(lat, lon);
     setIsAnalyzing(true);
     setApiError(null);
     try {
-      const data = await analyzeSite(lat, lon, poly);
+      const data = await analyzeSite(lat, lon, polygon);
       setSiteData(data);
-      setSitePolygon(poly);
+      setSitePolygon(polygon ?? null);
 
       if (data.location.stateCode) {
         setState(data.location.stateCode as StateCode);
@@ -86,13 +86,17 @@ function DistrictPage() {
       setStep("confirm");
     } catch (err) {
       setApiError("Could not analyze location. You can select your district manually below.");
+    } finally {
       setIsAnalyzing(false);
     }
-  }, [poly, setState, setDistrict, setSiteLocation, setSitePolygon, setSiteTerrain, setSiteInfrastructure, setSiteAreaSqm, setSiteConfidence, setSiteWarnings]);
+  }, [setState, setDistrict, setSiteLocation, setSitePolygon, setSiteTerrain, setSiteInfrastructure, setSiteAreaSqm, setSiteConfidence, setSiteWarnings]);
 
   const handlePolygonDraw = useCallback((polygon: [number, number][]) => {
     setPoly(polygon);
-  }, []);
+    if (siteLat && siteLon) {
+      handleLocationSelect(siteLat, siteLon, polygon);
+    }
+  }, [siteLat, siteLon, handleLocationSelect]);
 
   const handleConfirm = useCallback(() => {
     setStep("questions");

@@ -324,21 +324,27 @@ function ReportPage() {
         </Section>
 
         <Section n={w.siteLat ? 9 : 8} title="Subsidy Application Guide">
-          {subsidyResults.length === 0 && (
-            <p className="text-muted-foreground">No schemes evaluated.</p>
+          {subsidyResults.filter((r) => r.eligible).length === 0 && (
+            <p className="text-muted-foreground">No eligible schemes found for your profile.</p>
           )}
           <ul className="space-y-2 text-sm">
-            {subsidyResults.map((r) => (
+            {subsidyResults.filter((r) => r.eligible).map((r) => (
               <li
                 key={r.scheme.scheme_id}
-                className={`rounded border p-2 ${r.eligible ? "border-secondary/40 bg-secondary/5" : "border-border"}`}
+                className="rounded border border-secondary/40 bg-secondary/5 p-2"
               >
                 <div className="flex justify-between">
                   <strong>{r.scheme.scheme_name}</strong>
-                  <span className="font-mono">
-                    {r.eligible ? formatINR(r.estimatedAmount) : "Not eligible"}
-                  </span>
+                  <span className="font-mono">{formatINR(r.estimatedAmount)}</span>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {r.percent}% subsidy · Ceiling: {r.ceiling > 0 ? formatINR(r.ceiling) : "None"}
+                </p>
+                {r.scheme.implementing_agency && (
+                  <p className="text-xs text-muted-foreground">
+                    Agency: {r.scheme.implementing_agency}
+                  </p>
+                )}
                 {r.scheme.documentation_required && (
                   <p className="text-xs text-muted-foreground">
                     Docs: {r.scheme.documentation_required}
@@ -347,6 +353,20 @@ function ReportPage() {
               </li>
             ))}
           </ul>
+          {subsidyResults.filter((r) => !r.eligible).length > 0 && (
+            <details className="mt-4">
+              <summary className="text-xs text-muted-foreground cursor-pointer">
+                {subsidyResults.filter((r) => !r.eligible).length} ineligible schemes
+              </summary>
+              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                {subsidyResults.filter((r) => !r.eligible).map((r) => (
+                  <li key={r.scheme.scheme_id}>
+                    {r.scheme.scheme_name}: {r.reasons.join("; ")}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </Section>
 
         <Section n={w.siteLat ? 10 : 9} title="ROI Summary">

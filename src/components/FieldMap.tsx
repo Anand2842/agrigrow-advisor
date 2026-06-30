@@ -18,6 +18,7 @@ export function FieldMap({
   const markerRef = useRef<any | null>(null);
   const polygonPointsRef = useRef<any[]>([]);
   const polygonLayerRef = useRef<any | null>(null);
+  const circleMarkersRef = useRef<any[]>([]);
   const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
   const [polygonPoints, setPolygonPoints] = useState<[number, number][]>([]);
 
@@ -135,12 +136,13 @@ export function FieldMap({
         }).addTo(map);
       }
 
-      L.circleMarker(latlng, {
+      const cm = L.circleMarker(latlng, {
         radius: 5,
         color: "#2563EB",
         fillColor: "#2563EB",
         fillOpacity: 1,
       }).addTo(map);
+      circleMarkersRef.current.push(cm);
     },
     [],
   );
@@ -160,6 +162,10 @@ export function FieldMap({
       map.removeLayer(polygonLayerRef.current);
       polygonLayerRef.current = null;
     }
+    for (const cm of circleMarkersRef.current) {
+      map.removeLayer(cm);
+    }
+    circleMarkersRef.current = [];
     polygonPointsRef.current = [];
     setPolygonPoints([]);
   }, []);

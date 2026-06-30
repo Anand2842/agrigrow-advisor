@@ -48,7 +48,7 @@ function BOMPage() {
   const waterNearest = (infra?.water as { nearest?: { distance_m?: number } } | null)?.nearest;
 
   useEffect(() => {
-    if (siteAreaSqm && areaSqm === 1000) {
+    if (siteAreaSqm && siteAreaSqm > 0 && areaSqm === 1000) {
       setArea(siteAreaSqm);
     }
   }, [siteAreaSqm]);

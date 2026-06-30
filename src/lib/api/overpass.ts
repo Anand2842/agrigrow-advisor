@@ -87,6 +87,7 @@ out center;
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `data=${encodeURIComponent(query)}`,
+      signal: AbortSignal.timeout(30000),
     });
     if (!res.ok) {
       return {

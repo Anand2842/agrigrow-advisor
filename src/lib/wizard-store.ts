@@ -151,6 +151,11 @@ export const useWizard = create<WizardState>()(
           districtName: null,
           cropIds: [],
           structureId: null,
+          areaSqm: 1000,
+          tier: "B",
+          farmerCategory: "general",
+          landHolding: 1,
+          isFirstTime: true,
           siteLat: null,
           siteLon: null,
           sitePolygon: null,
@@ -165,6 +170,14 @@ export const useWizard = create<WizardState>()(
           siteIntelligenceComplete: false,
         }),
     }),
-    { name: "pca-wizard" },
+    {
+      name: "pca-wizard",
+      merge: (persisted: any, current: any) => ({
+        ...current,
+        ...persisted,
+        manualAnswers: { ...DEFAULT_MANUAL, ...persisted?.manualAnswers },
+        siteWarnings: persisted?.siteWarnings ?? [],
+      }),
+    },
   ),
 );

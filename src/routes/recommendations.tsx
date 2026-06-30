@@ -18,9 +18,16 @@ export const Route = createFileRoute("/recommendations")({
 });
 
 function costRange(structure: Record<string, unknown>, state: StateCode | null) {
-  const k = state ? (state.toLowerCase() as "up" | "mp" | "mh") : "up";
+  const k = state ? (state.toLowerCase() as "up" | "mp" | "mh" | "uk" | "hp") : "up";
   const min = structure[`cost_per_sqm_${k}_min`] as number | null;
   const max = structure[`cost_per_sqm_${k}_max`] as number | null;
+  // Fallback: UK/HP may not have dedicated columns, try UP
+  if (min == null && max == null && (k === "uk" || k === "hp")) {
+    return {
+      min: structure.cost_per_sqm_up_min as number | null,
+      max: structure.cost_per_sqm_up_max as number | null,
+    };
+  }
   return { min, max };
 }
 
@@ -63,7 +70,7 @@ function RecommendationsPage() {
       }));
     }
     return [];
-  }, [cropIds.length, fromCrops.data, all.data]);
+  }, [cropIds, fromCrops.data, all.data]);
 
   const categories = useMemo(() => {
     const s = new Set<string>();

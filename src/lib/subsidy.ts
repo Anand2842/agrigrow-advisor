@@ -69,6 +69,13 @@ export function evaluateSubsidies(
       eligible = false;
       reasons.push("First-time beneficiary only");
     }
+    if (s.valid_until) {
+      const validUntil = new Date(s.valid_until);
+      if (!isNaN(validUntil.getTime()) && validUntil < new Date()) {
+        eligible = false;
+        reasons.push(`Scheme expired on ${s.valid_until}`);
+      }
+    }
     if (
       s.structures_eligible &&
       s.structures_eligible !== "All" &&

@@ -68,6 +68,7 @@ function CropPage() {
             const priceKey =
               state === "UP" ? "msp_or_market_rate_up" : state === "MP" ? "msp_or_market_rate_mp" : state === "MH" ? "msp_or_market_rate_mh" : "msp_or_market_rate_up";
             const price = priceKey ? (c as Record<string, unknown>)[priceKey] : null;
+            const usingFallbackData = state === "UK" || state === "HP";
 
             const isHighAltitudeIncompatible = siteElevation != null && siteElevation > 2000 &&
               (c.crop_id === "C011" || c.crop_id === "C009");
@@ -104,6 +105,9 @@ function CropPage() {
                   {typeof season === "string" && season && <Row k="Season" v={season} />}
                   {typeof price === "number" && (
                     <Row k="Market rate" v={`₹${Math.round(price)}/qtl`} />
+                  )}
+                  {usingFallbackData && (
+                    <li className="text-xs text-muted-foreground italic">* Approx — no state-specific data for UK/HP</li>
                   )}
                 </dl>
               </button>

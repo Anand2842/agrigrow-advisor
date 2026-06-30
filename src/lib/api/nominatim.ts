@@ -41,7 +41,7 @@ const DISTRICT_NORMALIZE: Record<string, string> = {
   "BILASPUR_HP": "d_bilaspur_hp",
   "CHAMBA": "d_chamba",
   "KINNAUR": "d_kinnaur",
-  "LAHaul SPITI": "d_lahaul_spiti",
+  "LAHAUL SPITI": "d_lahaul_spiti",
   "SPITI": "d_lahaul_spiti",
 };
 
@@ -75,6 +75,7 @@ export async function reverseGeocode(
     const url = `${NOMINATIM_BASE}/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1&zoom=18`;
     const res = await fetch(url, {
       headers: { "User-Agent": "AgriGrow/2.0 (agrigrow-advisor)" },
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -110,6 +111,7 @@ export async function searchLocation(
     const url = `${NOMINATIM_BASE}/search?format=jsonv2&q=${encodeURIComponent(query)}&limit=5&countrycodes=in`;
     const res = await fetch(url, {
       headers: { "User-Agent": "AgriGrow/2.0 (agrigrow-advisor)" },
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return [];
     const data = await res.json();

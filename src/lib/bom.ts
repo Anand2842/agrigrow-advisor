@@ -67,7 +67,8 @@ function priceFor(m: MaterialRow, tier: Tier, state: StateCode): number {
     v = m[fallback] as number | null;
     if (v) v = v * 1.15;
   }
-  return v ?? 0;
+  if (v == null || v === 0) return 0;
+  return v;
 }
 
 function specFor(m: MaterialRow, tier: Tier): string {
@@ -97,6 +98,7 @@ export function calculateBOM(
     water_distance_m?: number | null;
   } | null,
 ): BOMResult {
+  const safeArea = Math.max(areaSqm, 1);
   const lines: BOMLine[] = [];
   const globalWarnings = new Set<string>();
   const adjustments: { label: string; factor: number; reason: string }[] = [];
@@ -140,7 +142,7 @@ export function calculateBOM(
   }
 
   for (const m of materials) {
-    const baseQty = quantityFor(m.quantity_formula, areaSqm);
+    const baseQty = quantityFor(m.quantity_formula, safeArea);
     let qty = baseQty * (m.wastage_factor ?? 1);
     let price = priceFor(m, tier, state);
     const warnings: string[] = [];

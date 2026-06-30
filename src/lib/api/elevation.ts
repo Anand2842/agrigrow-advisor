@@ -61,14 +61,15 @@ export async function getElevation(
   lat: number,
   lon: number,
 ): Promise<ElevationResult> {
-  const elevation = await fetchElevation(lat, lon);
+  const [elevation, elevN, elevE] = await Promise.all([
+    fetchElevation(lat, lon),
+    fetchElevation(lat + 0.001, lon),
+    fetchElevation(lat, lon + 0.001),
+  ]);
 
   if (elevation == null) {
     return { elevation_m: null, slope_percent: null, aspect: null, source: "none" };
   }
-
-  const elevN = await fetchElevation(lat + 0.001, lon);
-  const elevE = await fetchElevation(lat, lon + 0.001);
 
   let slopePercent: number | null = null;
   let aspect: string | null = null;
