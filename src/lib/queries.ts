@@ -64,18 +64,56 @@ export const structuresForCropsQuery = (cropIds: string[]) =>
     queryKey: ["structures", cropIds.slice().sort()],
     enabled: cropIds.length > 0,
     queryFn: async () => {
-      const [{ data: matches, error: e1 }, { data: structures, error: e2 }] = await Promise.all([
-        supabase
-          .from("crop_structure_match")
-          .select("crop_id, structure_id, suitability_score, notes")
-          .in("crop_id", cropIds),
-        supabase.from("structure_data").select("*"),
-      ]);
+      // The crop_structure_match table has inconsistent IDs:
+      // some rows use C001-C011, others use short codes (BG, CP, CA, etc.)
+      // Fetch all matches and normalize client-side
+      const [{ data: allMatches, error: e1 }, { data: structures, error: e2 }, { data: crops, error: e3 }] =
+        await Promise.all([
+          supabase
+            .from("crop_structure_match")
+            .select("crop_id, structure_id, suitability_score, notes"),
+          supabase.from("structure_data").select("*"),
+          supabase.from("crop_data").select("crop_id, crop_name_common"),
+        ]);
       if (e1) throw e1;
       if (e2) throw e2;
+
+      // Build reverse mapping: short_code -> C-prefix ID
+      // From crop_data we know C004=Bitter Gourd, and from crop_structure_match we see BG=Bitter Gourd
+      // We infer the mapping from shared short codes
+      const cropIdToName = new Map<string, string>();
+      for (const c of crops ?? []) {
+        if (c.crop_id && c.crop_name_common) cropIdToName.set(c.crop_id, c.crop_name_common);
+      }
+
+      // Known short code mappings (from crop_structure_match data)
+      const SHORT_CODE_MAP: Record<string, string> = {
+        BG: "C004", CP: "C002", CA: "C010", CU: "C003",
+        GB: "C009", GL: "C007", MG: "C006", RO: "C008",
+        SB: "C011", TM: "C001", CH: "C005",
+      };
+
+      // Normalize a crop_id from crop_structure_match to a C-prefix ID
+      function normalizeMatchCropId(raw: string): string | null {
+        if (raw.startsWith("C") && cropIdToName.has(raw)) return raw;
+        const mapped = SHORT_CODE_MAP[raw];
+        if (mapped && cropIdToName.has(mapped)) return mapped;
+        return null;
+      }
+
+      // Build a set of normalized crop IDs the user selected
+      const selectedNormalized = new Set(cropIds);
+
+      // Filter matches to only rows that correspond to selected crops
+      const matches = (allMatches ?? []).filter((row) => {
+        if (!row.crop_id) return false;
+        const normalized = normalizeMatchCropId(row.crop_id);
+        return normalized !== null && selectedNormalized.has(normalized);
+      });
+
       const byId = new Map((structures ?? []).map((s) => [s.structure_id, s]));
       const agg = new Map<string, { scores: number[]; notes: string[] }>();
-      for (const row of matches ?? []) {
+      for (const row of matches) {
         if (!row.structure_id) continue;
         if (!agg.has(row.structure_id)) agg.set(row.structure_id, { scores: [], notes: [] });
         const e = agg.get(row.structure_id)!;

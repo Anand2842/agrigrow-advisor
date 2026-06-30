@@ -117,16 +117,18 @@ export function useAdvisory(): AdvisoryResult {
   // Rank crops by climate fit
   const rankedCrops = useMemo(() => {
     if (!crops.data) return [];
-    return rankCrops(crops.data, climate.data ?? null, site?.elevation ?? null);
+    return rankCrops(crops.data, climate.data ?? null, site?.elevation ?? null, state);
   }, [crops.data, climate.data, site?.elevation]);
 
   // Rank structures by crop suitability
   const rankedStructures = useMemo(() => {
-    const structureList = (overrides.cropIds.length > 0 && fromCrops.data)
+    // Use crop-matched structures if available; otherwise fall back to all structures
+    const hasCropMatches = overrides.cropIds.length > 0 && fromCrops.data && fromCrops.data.length > 0;
+    const structureList = hasCropMatches
       ? fromCrops.data.map((d) => d.structure)
       : allStructures.data ?? [];
 
-    const matches = (overrides.cropIds.length > 0 && fromCrops.data)
+    const matches = hasCropMatches
       ? fromCrops.data.flatMap((d) =>
           (d.notes ?? []).map((n: string) => ({
             structure_id: d.structure.structure_id,
@@ -136,7 +138,13 @@ export function useAdvisory(): AdvisoryResult {
         )
       : [];
 
-    return rankStructures(structureList, matches);
+    const ranked = rankStructures(structureList, matches);
+
+    // If no crop matches, assign a neutral score to all structures
+    if (!hasCropMatches && ranked.length > 0) {
+      return ranked.map((r) => ({ ...r, avgScore: 0 }));
+    }
+    return ranked;
   }, [fromCrops.data, allStructures.data, overrides.cropIds]);
 
   // Auto-select top structure if none selected
