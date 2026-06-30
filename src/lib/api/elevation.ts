@@ -1,4 +1,3 @@
-const OPENTOPO_BASE = "https://api.opentopodata.org/v1";
 const OPEN_ELEVATION_BASE = "https://api.open-elevation.com/api/v1";
 
 export interface ElevationResult {
@@ -43,81 +42,46 @@ function computeAspect(elevCenter: number, elevNorth: number, elevEast: number):
   return "Northwest";
 }
 
+async function fetchElevation(lat: number, lon: number): Promise<number | null> {
+  try {
+    const url = `${OPEN_ELEVATION_BASE}/lookup?locations=${lat},${lon}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.results?.[0]?.elevation != null) {
+      return data.results[0].elevation;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getElevation(
   lat: number,
   lon: number,
 ): Promise<ElevationResult> {
-  const tryOpentopodata = async (): Promise<number | null> => {
-    try {
-      const url = `${OPENTOPO_BASE}/test-profile?locations=${lat},${lon}`;
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (data.results?.[0]?.elevation != null) {
-        return data.results[0].elevation;
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  };
-
-  const tryOpenElevation = async (): Promise<number | null> => {
-    try {
-      const url = `${OPEN_ELEVATION_BASE}/lookup?locations=${lat},${lon}`;
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (data.results?.[0]?.elevation != null) {
-        return data.results[0].elevation;
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  };
-
-  let elevation = await tryOpentopodata();
-  let source = "opentopodata";
-
-  if (elevation == null) {
-    elevation = await tryOpenElevation();
-    source = "open-elevation";
-  }
+  const elevation = await fetchElevation(lat, lon);
 
   if (elevation == null) {
     return { elevation_m: null, slope_percent: null, aspect: null, source: "none" };
   }
 
-  const trySlope = async (): Promise<{ elevN: number; elevE: number } | null> => {
-    try {
-      const urlN = `${OPENTOPO_BASE}/test-profile?locations=${lat + 0.001},${lon}`;
-      const urlE = `${OPENTOPO_BASE}/test-profile?locations=${lat},${lon + 0.001}`;
-      const [resN, resE] = await Promise.all([fetch(urlN), fetch(urlE)]);
-      if (!resN.ok || !resE.ok) return null;
-      const [dataN, dataE] = await Promise.all([resN.json(), resE.json()]);
-      return {
-        elevN: dataN.results?.[0]?.elevation ?? elevation!,
-        elevE: dataE.results?.[0]?.elevation ?? elevation!,
-      };
-    } catch {
-      return null;
-    }
-  };
+  const elevN = await fetchElevation(lat + 0.001, lon);
+  const elevE = await fetchElevation(lat, lon + 0.001);
 
-  const slopeData = await trySlope();
   let slopePercent: number | null = null;
   let aspect: string | null = null;
 
-  if (slopeData) {
-    slopePercent = computeSlope(elevation, slopeData.elevN, slopeData.elevE, lat);
-    aspect = computeAspect(elevation, slopeData.elevN, slopeData.elevE);
+  if (elevN != null && elevE != null) {
+    slopePercent = computeSlope(elevation, elevN, elevE, lat);
+    aspect = computeAspect(elevation, elevN, elevE);
   }
 
   return {
     elevation_m: Math.round(elevation * 10) / 10,
     slope_percent: slopePercent,
     aspect,
-    source,
+    source: "open-elevation",
   };
 }
