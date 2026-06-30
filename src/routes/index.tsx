@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MapPin, Leaf, Building2, ArrowRight } from "lucide-react";
+import { MapPin, ArrowRight, Sprout, Building2, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Pick your district & crops to get structure recommendations, BOM cost, and subsidy estimates for protected farming in UP, MP, Maharashtra, Uttarakhand, and Himachal Pradesh.",
+          "Data-driven advice for choosing the right protected farming structure, estimating bill of materials, and unlocking government subsidies.",
       },
     ],
   }),
@@ -27,26 +27,22 @@ function Index() {
             Protected Cultivation Advisory
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Data-driven advice for choosing the right protected farming structure,
-            estimating bill of materials, and unlocking government subsidies.
+            Drop a pin on your field. Get structure recommendations, bill of materials,
+            and subsidy estimates — instantly.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-8">
             <Link
-              to="/district"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
+              to="/plan"
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow hover:bg-primary/90 transition"
             >
-              Start Advisory <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/recommendations"
-              className="inline-flex items-center gap-2 rounded-md border bg-background px-5 py-2.5 text-sm font-semibold hover:bg-accent"
-            >
-              Browse Structures
+              <MapPin className="h-5 w-5" />
+              Start Advisory
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
           <div className="mx-auto mt-12 grid max-w-3xl grid-cols-3 gap-6 text-center">
-            <Stat n="163" label="Districts covered" />
+            <Stat n="188" label="Districts covered" />
             <Stat n="11" label="Crops" />
             <Stat n="8" label="Structure types" />
           </div>
@@ -57,18 +53,18 @@ function Index() {
         <div className="grid gap-6 md:grid-cols-3">
           <FeatureCard
             icon={<MapPin className="h-5 w-5" />}
-            title="District Selection"
-            desc="Choose your district to see climate, rainfall, fog days, and agro-climatic zone."
+            title="Pin Your Field"
+            desc="Click on the map. We auto-detect your district, terrain, elevation, and nearby infrastructure."
           />
           <FeatureCard
-            icon={<Leaf className="h-5 w-5" />}
-            title="Crop Planning"
-            desc="Pick one or more crops. We use temperature, season, and market price data."
+            icon={<Sprout className="h-5 w-5" />}
+            title="Instant Advisory"
+            desc="Crops ranked by climate fit, structures by suitability score, costs adjusted for your site."
           />
           <FeatureCard
-            icon={<Building2 className="h-5 w-5" />}
-            title="Structure Recommendation"
-            desc="Get ranked structure suggestions with cost ranges and climate match notes."
+            icon={<TrendingUp className="h-5 w-5" />}
+            title="Full Financials"
+            desc="BOM with IS-standard materials, government subsidy estimates, and cost-per-sqm breakdown."
           />
         </div>
       </section>

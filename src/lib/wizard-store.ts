@@ -5,20 +5,24 @@ export type StateCode = "UP" | "MP" | "MH" | "UK" | "HP";
 export type Tier = "A" | "B" | "C";
 export type FarmerCategory = "general" | "sc_st" | "women";
 
-export interface ManualAnswers {
-  soilType: string | null;
-  waterSource: string | null;
-  waterQuality: string | null;
-  windbreak: string | null;
-  nearbyStructures: string | null;
-  frostPocket: string | null;
-  floodRisk: string | null;
-}
-
-export interface WizardState {
-  state: StateCode | null;
+export interface SiteData {
+  lat: number;
+  lon: number;
+  polygon: [number, number][] | null;
+  elevation: number | null;
+  slope: number | null;
+  aspect: string | null;
+  areaSqm: number | null;
+  perimeter: number | null;
   districtId: string | null;
   districtName: string | null;
+  stateCode: StateCode | null;
+  confidence: "high" | "medium" | "low";
+  warnings: string[];
+  infrastructure: Record<string, unknown> | null;
+}
+
+export interface AdvisoryOverrides {
   cropIds: string[];
   structureId: string | null;
   areaSqm: number;
@@ -26,148 +30,93 @@ export interface WizardState {
   farmerCategory: FarmerCategory;
   landHolding: number;
   isFirstTime: boolean;
+}
 
-  siteLat: number | null;
-  siteLon: number | null;
-  sitePolygon: [number, number][] | null;
-  siteElevation: number | null;
-  siteSlope: number | null;
-  siteAspect: string | null;
-  siteAreaSqm: number | null;
-  siteConfidence: "high" | "medium" | "low" | null;
-  siteWarnings: string[];
-  siteInfrastructure: Record<string, unknown> | null;
-  manualAnswers: ManualAnswers;
-  siteIntelligenceComplete: boolean;
+export interface WizardState {
+  site: SiteData | null;
+  overrides: AdvisoryOverrides;
+  isAnalyzing: boolean;
+  analysisError: string | null;
 
-  setState: (s: StateCode | null) => void;
-  setDistrict: (id: string | null, name: string | null) => void;
+  setSite: (site: SiteData) => void;
+  clearSite: () => void;
+  setIsAnalyzing: (v: boolean) => void;
+  setAnalysisError: (e: string | null) => void;
+
+  setCropIds: (ids: string[]) => void;
   toggleCrop: (id: string) => void;
-  setCrops: (ids: string[]) => void;
-  setStructure: (id: string | null) => void;
-  setArea: (n: number) => void;
+  setStructureId: (id: string | null) => void;
+  setAreaSqm: (n: number) => void;
   setTier: (t: Tier) => void;
   setFarmerCategory: (c: FarmerCategory) => void;
   setLandHolding: (n: number) => void;
   setIsFirstTime: (b: boolean) => void;
-  setSiteLocation: (lat: number, lon: number) => void;
-  setSitePolygon: (polygon: [number, number][] | null) => void;
-  setSiteTerrain: (elevation: number | null, slope: number | null, aspect: string | null) => void;
-  setSiteInfrastructure: (infra: Record<string, unknown>) => void;
-  setSiteAreaSqm: (area: number | null) => void;
-  setSiteConfidence: (c: "high" | "medium" | "low") => void;
-  setSiteWarnings: (warnings: string[]) => void;
-  setManualAnswers: (answers: Partial<ManualAnswers>) => void;
-  markSiteComplete: () => void;
-  resetSite: () => void;
+
   reset: () => void;
 }
 
-const DEFAULT_MANUAL: ManualAnswers = {
-  soilType: null,
-  waterSource: null,
-  waterQuality: null,
-  windbreak: null,
-  nearbyStructures: null,
-  frostPocket: null,
-  floodRisk: null,
+const DEFAULT_OVERRIDES: AdvisoryOverrides = {
+  cropIds: [],
+  structureId: null,
+  areaSqm: 1000,
+  tier: "B",
+  farmerCategory: "general",
+  landHolding: 1,
+  isFirstTime: true,
 };
 
 export const useWizard = create<WizardState>()(
   persist(
     (set) => ({
-      state: null,
-      districtId: null,
-      districtName: null,
-      cropIds: [],
-      structureId: null,
-      areaSqm: 1000,
-      tier: "B",
-      farmerCategory: "general",
-      landHolding: 1,
-      isFirstTime: true,
+      site: null,
+      overrides: { ...DEFAULT_OVERRIDES },
+      isAnalyzing: false,
+      analysisError: null,
 
-      siteLat: null,
-      siteLon: null,
-      sitePolygon: null,
-      siteElevation: null,
-      siteSlope: null,
-      siteAspect: null,
-      siteAreaSqm: null,
-      siteConfidence: null,
-      siteWarnings: [],
-      siteInfrastructure: null,
-      manualAnswers: DEFAULT_MANUAL,
-      siteIntelligenceComplete: false,
+      setSite: (site) =>
+        set((st) => ({
+          site,
+          // Auto-derive areaSqm from polygon if available
+          overrides: {
+            ...st.overrides,
+            areaSqm: site.areaSqm ?? st.overrides.areaSqm,
+          },
+        })),
+      clearSite: () =>
+        set({
+          site: null,
+          overrides: { ...DEFAULT_OVERRIDES },
+          analysisError: null,
+        }),
+      setIsAnalyzing: (v) => set({ isAnalyzing: v }),
+      setAnalysisError: (e) => set({ analysisError: e }),
 
-      setState: (s) => set({ state: s, districtId: null, districtName: null }),
-      setDistrict: (id, name) => set({ districtId: id, districtName: name }),
+      setCropIds: (ids) => set((st) => ({ overrides: { ...st.overrides, cropIds: ids } })),
       toggleCrop: (id) =>
         set((st) => ({
-          cropIds: st.cropIds.includes(id)
-            ? st.cropIds.filter((c) => c !== id)
-            : [...st.cropIds, id],
+          overrides: {
+            ...st.overrides,
+            cropIds: st.overrides.cropIds.includes(id)
+              ? st.overrides.cropIds.filter((c) => c !== id)
+              : [...st.overrides.cropIds, id],
+          },
         })),
-      setCrops: (ids) => set({ cropIds: ids }),
-      setStructure: (id) => set({ structureId: id }),
-      setArea: (n) => set({ areaSqm: n }),
-      setTier: (t) => set({ tier: t }),
-      setFarmerCategory: (c) => set({ farmerCategory: c }),
-      setLandHolding: (n) => set({ landHolding: n }),
-      setIsFirstTime: (b) => set({ isFirstTime: b }),
+      setStructureId: (id) => set((st) => ({ overrides: { ...st.overrides, structureId: id } })),
+      setAreaSqm: (n) => set((st) => ({ overrides: { ...st.overrides, areaSqm: n } })),
+      setTier: (t) => set((st) => ({ overrides: { ...st.overrides, tier: t } })),
+      setFarmerCategory: (c) =>
+        set((st) => ({ overrides: { ...st.overrides, farmerCategory: c } })),
+      setLandHolding: (n) =>
+        set((st) => ({ overrides: { ...st.overrides, landHolding: n } })),
+      setIsFirstTime: (b) =>
+        set((st) => ({ overrides: { ...st.overrides, isFirstTime: b } })),
 
-      setSiteLocation: (lat, lon) => set({ siteLat: lat, siteLon: lon }),
-      setSitePolygon: (polygon) => set({ sitePolygon: polygon }),
-      setSiteTerrain: (elevation, slope, aspect) =>
-        set({ siteElevation: elevation, siteSlope: slope, siteAspect: aspect }),
-      setSiteInfrastructure: (infra) => set({ siteInfrastructure: infra }),
-      setSiteAreaSqm: (area) => set({ siteAreaSqm: area }),
-      setSiteConfidence: (c) => set({ siteConfidence: c }),
-      setSiteWarnings: (warnings) => set({ siteWarnings: warnings }),
-      setManualAnswers: (answers) =>
-        set((st) => ({
-          manualAnswers: { ...st.manualAnswers, ...answers },
-        })),
-      markSiteComplete: () => set({ siteIntelligenceComplete: true }),
-      resetSite: () =>
-        set({
-          siteLat: null,
-          siteLon: null,
-          sitePolygon: null,
-          siteElevation: null,
-          siteSlope: null,
-          siteAspect: null,
-          siteAreaSqm: null,
-          siteConfidence: null,
-          siteWarnings: [],
-          siteInfrastructure: null,
-          manualAnswers: DEFAULT_MANUAL,
-          siteIntelligenceComplete: false,
-        }),
       reset: () =>
         set({
-          state: null,
-          districtId: null,
-          districtName: null,
-          cropIds: [],
-          structureId: null,
-          areaSqm: 1000,
-          tier: "B",
-          farmerCategory: "general",
-          landHolding: 1,
-          isFirstTime: true,
-          siteLat: null,
-          siteLon: null,
-          sitePolygon: null,
-          siteElevation: null,
-          siteSlope: null,
-          siteAspect: null,
-          siteAreaSqm: null,
-          siteConfidence: null,
-          siteWarnings: [],
-          siteInfrastructure: null,
-          manualAnswers: DEFAULT_MANUAL,
-          siteIntelligenceComplete: false,
+          site: null,
+          overrides: { ...DEFAULT_OVERRIDES },
+          isAnalyzing: false,
+          analysisError: null,
         }),
     }),
     {
@@ -175,8 +124,7 @@ export const useWizard = create<WizardState>()(
       merge: (persisted: any, current: any) => ({
         ...current,
         ...persisted,
-        manualAnswers: { ...DEFAULT_MANUAL, ...persisted?.manualAnswers },
-        siteWarnings: persisted?.siteWarnings ?? [],
+        overrides: { ...DEFAULT_OVERRIDES, ...persisted?.overrides },
       }),
     },
   ),

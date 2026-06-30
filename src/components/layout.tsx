@@ -14,39 +14,11 @@ export function Navbar() {
         </Link>
         <nav className="flex items-center gap-1 text-sm">
           <Link
-            to="/district"
+            to="/plan"
             className="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             activeProps={{ className: "rounded-md px-3 py-1.5 text-foreground font-medium bg-muted" }}
           >
-            District
-          </Link>
-          <Link
-            to="/crop"
-            className="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            activeProps={{ className: "rounded-md px-3 py-1.5 text-foreground font-medium bg-muted" }}
-          >
-            Crop
-          </Link>
-          <Link
-            to="/recommendations"
-            className="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            activeProps={{ className: "rounded-md px-3 py-1.5 text-foreground font-medium bg-muted" }}
-          >
-            Structures
-          </Link>
-          <Link
-            to="/bom"
-            className="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            activeProps={{ className: "rounded-md px-3 py-1.5 text-foreground font-medium bg-muted" }}
-          >
-            BOM
-          </Link>
-          <Link
-            to="/subsidy"
-            className="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            activeProps={{ className: "rounded-md px-3 py-1.5 text-foreground font-medium bg-muted" }}
-          >
-            Subsidy
+            Advisory
           </Link>
           <Link
             to="/report"
@@ -65,7 +37,7 @@ export function Footer() {
   return (
     <footer className="no-print border-t bg-muted/30 mt-12">
       <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-muted-foreground flex flex-wrap items-center justify-between gap-2">
-        <p>© {new Date().getFullYear()} Protected Cultivation Advisory · UP · MP · MH</p>
+        <p>© {new Date().getFullYear()} Protected Cultivation Advisory · UP · MP · MH · UK · HP</p>
         <p>Data sourced from government schemes & district climate records.</p>
       </div>
     </footer>
