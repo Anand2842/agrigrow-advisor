@@ -839,12 +839,21 @@ export type Database = {
           field_location: string | null
           flood_risk: string | null
           frost_pocket: string | null
+          infrastructure_data: Json | null
           input_id: number
+          intelligence_confidence: string | null
           latitude: number | null
           longitude: number | null
+          manual_answers: Json | null
           nearby_structure: string | null
           nearest_weather_station: string | null
           notes: string | null
+          site_aspect: string | null
+          site_elevation_m: number | null
+          site_latitude: number | null
+          site_longitude: number | null
+          site_polygon: Json | null
+          site_slope_percent: number | null
           slope_percent: number | null
           soil_ph: number | null
           soil_type: string | null
@@ -862,12 +871,21 @@ export type Database = {
           field_location?: string | null
           flood_risk?: string | null
           frost_pocket?: string | null
+          infrastructure_data?: Json | null
           input_id?: number
+          intelligence_confidence?: string | null
           latitude?: number | null
           longitude?: number | null
+          manual_answers?: Json | null
           nearby_structure?: string | null
           nearest_weather_station?: string | null
           notes?: string | null
+          site_aspect?: string | null
+          site_elevation_m?: number | null
+          site_latitude?: number | null
+          site_longitude?: number | null
+          site_polygon?: Json | null
+          site_slope_percent?: number | null
           slope_percent?: number | null
           soil_ph?: number | null
           soil_type?: string | null
@@ -885,12 +903,21 @@ export type Database = {
           field_location?: string | null
           flood_risk?: string | null
           frost_pocket?: string | null
+          infrastructure_data?: Json | null
           input_id?: number
+          intelligence_confidence?: string | null
           latitude?: number | null
           longitude?: number | null
+          manual_answers?: Json | null
           nearby_structure?: string | null
           nearest_weather_station?: string | null
           notes?: string | null
+          site_aspect?: string | null
+          site_elevation_m?: number | null
+          site_latitude?: number | null
+          site_longitude?: number | null
+          site_polygon?: Json | null
+          site_slope_percent?: number | null
           slope_percent?: number | null
           soil_ph?: number | null
           soil_type?: string | null
@@ -935,6 +962,69 @@ export type Database = {
           reinforcement?: string | null
           soil_type?: string
           structure_id?: string
+        }
+        Relationships: []
+      }
+      location_intelligence_cache: {
+        Row: {
+          annual_rainfall_mm: number | null
+          annual_temp_max: number | null
+          annual_temp_min: number | null
+          api_response: Json | null
+          aspect_direction: string | null
+          buildings_within_500m: number | null
+          cache_timestamp: string | null
+          elevation_m: number | null
+          flood_risk: string | null
+          id: number
+          latitude: number
+          longitude: number
+          nearest_road_distance_m: number | null
+          nearest_settlement_name: string | null
+          nearest_water_distance_m: number | null
+          slope_percent: number | null
+          soil_type: string | null
+          weather_station_distance_m: number | null
+        }
+        Insert: {
+          annual_rainfall_mm?: number | null
+          annual_temp_max?: number | null
+          annual_temp_min?: number | null
+          api_response?: Json | null
+          aspect_direction?: string | null
+          buildings_within_500m?: number | null
+          cache_timestamp?: string | null
+          elevation_m?: number | null
+          flood_risk?: string | null
+          id?: number
+          latitude: number
+          longitude: number
+          nearest_road_distance_m?: number | null
+          nearest_settlement_name?: string | null
+          nearest_water_distance_m?: number | null
+          slope_percent?: number | null
+          soil_type?: string | null
+          weather_station_distance_m?: number | null
+        }
+        Update: {
+          annual_rainfall_mm?: number | null
+          annual_temp_max?: number | null
+          annual_temp_min?: number | null
+          api_response?: Json | null
+          aspect_direction?: string | null
+          buildings_within_500m?: number | null
+          cache_timestamp?: string | null
+          elevation_m?: number | null
+          flood_risk?: string | null
+          id?: number
+          latitude?: number
+          longitude?: number
+          nearest_road_distance_m?: number | null
+          nearest_settlement_name?: string | null
+          nearest_water_distance_m?: number | null
+          slope_percent?: number | null
+          soil_type?: string | null
+          weather_station_distance_m?: number | null
         }
         Relationships: []
       }
@@ -1001,29 +1091,29 @@ export type Database = {
           sub_category: string | null
           tier_a_brand_examples: string | null
           tier_a_lifespan: number | null
+          tier_a_price_hp: number | null
           tier_a_price_mh: number | null
           tier_a_price_mp: number | null
-          tier_a_price_up: number | null
           tier_a_price_uk: number | null
-          tier_a_price_hp: number | null
+          tier_a_price_up: number | null
           tier_a_spec: string | null
           tier_b_brand_examples: string | null
           tier_b_downgrade_consequence: string | null
           tier_b_lifespan: number | null
+          tier_b_price_hp: number | null
           tier_b_price_mh: number | null
           tier_b_price_mp: number | null
-          tier_b_price_up: number | null
           tier_b_price_uk: number | null
-          tier_b_price_hp: number | null
+          tier_b_price_up: number | null
           tier_b_spec: string | null
           tier_c_brand_examples: string | null
           tier_c_downgrade_consequence: string | null
           tier_c_lifespan: number | null
+          tier_c_price_hp: number | null
           tier_c_price_mh: number | null
           tier_c_price_mp: number | null
-          tier_c_price_up: number | null
           tier_c_price_uk: number | null
-          tier_c_price_hp: number | null
+          tier_c_price_up: number | null
           tier_c_spec: string | null
           transport_cost_per_km_per_ton: number | null
           transport_mode: string | null
@@ -1047,29 +1137,29 @@ export type Database = {
           sub_category?: string | null
           tier_a_brand_examples?: string | null
           tier_a_lifespan?: number | null
+          tier_a_price_hp?: number | null
           tier_a_price_mh?: number | null
           tier_a_price_mp?: number | null
-          tier_a_price_up?: number | null
           tier_a_price_uk?: number | null
-          tier_a_price_hp?: number | null
+          tier_a_price_up?: number | null
           tier_a_spec?: string | null
           tier_b_brand_examples?: string | null
           tier_b_downgrade_consequence?: string | null
           tier_b_lifespan?: number | null
+          tier_b_price_hp?: number | null
           tier_b_price_mh?: number | null
           tier_b_price_mp?: number | null
-          tier_b_price_up?: number | null
           tier_b_price_uk?: number | null
-          tier_b_price_hp?: number | null
+          tier_b_price_up?: number | null
           tier_b_spec?: string | null
           tier_c_brand_examples?: string | null
           tier_c_downgrade_consequence?: string | null
           tier_c_lifespan?: number | null
+          tier_c_price_hp?: number | null
           tier_c_price_mh?: number | null
           tier_c_price_mp?: number | null
-          tier_c_price_up?: number | null
           tier_c_price_uk?: number | null
-          tier_c_price_hp?: number | null
+          tier_c_price_up?: number | null
           tier_c_spec?: string | null
           transport_cost_per_km_per_ton?: number | null
           transport_mode?: string | null
@@ -1093,29 +1183,29 @@ export type Database = {
           sub_category?: string | null
           tier_a_brand_examples?: string | null
           tier_a_lifespan?: number | null
+          tier_a_price_hp?: number | null
           tier_a_price_mh?: number | null
           tier_a_price_mp?: number | null
-          tier_a_price_up?: number | null
           tier_a_price_uk?: number | null
-          tier_a_price_hp?: number | null
+          tier_a_price_up?: number | null
           tier_a_spec?: string | null
           tier_b_brand_examples?: string | null
           tier_b_downgrade_consequence?: string | null
           tier_b_lifespan?: number | null
+          tier_b_price_hp?: number | null
           tier_b_price_mh?: number | null
           tier_b_price_mp?: number | null
-          tier_b_price_up?: number | null
           tier_b_price_uk?: number | null
-          tier_b_price_hp?: number | null
+          tier_b_price_up?: number | null
           tier_b_spec?: string | null
           tier_c_brand_examples?: string | null
           tier_c_downgrade_consequence?: string | null
           tier_c_lifespan?: number | null
+          tier_c_price_hp?: number | null
           tier_c_price_mh?: number | null
           tier_c_price_mp?: number | null
-          tier_c_price_up?: number | null
           tier_c_price_uk?: number | null
-          tier_c_price_hp?: number | null
+          tier_c_price_up?: number | null
           tier_c_spec?: string | null
           transport_cost_per_km_per_ton?: number | null
           transport_mode?: string | null
@@ -1199,6 +1289,96 @@ export type Database = {
           structure_id?: string
           temp_reduction_summer?: number | null
           ventilation_rate?: number | null
+        }
+        Relationships: []
+      }
+      operating_costs: {
+        Row: {
+          annual_revenue: number | null
+          area_sqm: number | null
+          crop_id: string
+          data_source: string | null
+          electricity_monthly: number | null
+          fertilizer_annual: number | null
+          id: number
+          insurance_annual: number | null
+          labour_monthly: number | null
+          last_verified: string | null
+          maintenance_annual: number | null
+          net_10yr_return: number | null
+          other_annual: number | null
+          payback_years: number | null
+          pesticide_annual: number | null
+          price_per_kg: number | null
+          replacement_schedule: string | null
+          seed_seedling_annual: number | null
+          state: string
+          structure_id: string
+          total_10yr_operating: number | null
+          total_10yr_replacement: number | null
+          total_10yr_revenue: number | null
+          total_10yr_tco: number | null
+          total_annual_operating: number | null
+          water_monthly: number | null
+          yield_per_sqm_kg: number | null
+        }
+        Insert: {
+          annual_revenue?: number | null
+          area_sqm?: number | null
+          crop_id: string
+          data_source?: string | null
+          electricity_monthly?: number | null
+          fertilizer_annual?: number | null
+          id?: number
+          insurance_annual?: number | null
+          labour_monthly?: number | null
+          last_verified?: string | null
+          maintenance_annual?: number | null
+          net_10yr_return?: number | null
+          other_annual?: number | null
+          payback_years?: number | null
+          pesticide_annual?: number | null
+          price_per_kg?: number | null
+          replacement_schedule?: string | null
+          seed_seedling_annual?: number | null
+          state: string
+          structure_id: string
+          total_10yr_operating?: number | null
+          total_10yr_replacement?: number | null
+          total_10yr_revenue?: number | null
+          total_10yr_tco?: number | null
+          total_annual_operating?: number | null
+          water_monthly?: number | null
+          yield_per_sqm_kg?: number | null
+        }
+        Update: {
+          annual_revenue?: number | null
+          area_sqm?: number | null
+          crop_id?: string
+          data_source?: string | null
+          electricity_monthly?: number | null
+          fertilizer_annual?: number | null
+          id?: number
+          insurance_annual?: number | null
+          labour_monthly?: number | null
+          last_verified?: string | null
+          maintenance_annual?: number | null
+          net_10yr_return?: number | null
+          other_annual?: number | null
+          payback_years?: number | null
+          pesticide_annual?: number | null
+          price_per_kg?: number | null
+          replacement_schedule?: string | null
+          seed_seedling_annual?: number | null
+          state?: string
+          structure_id?: string
+          total_10yr_operating?: number | null
+          total_10yr_replacement?: number | null
+          total_10yr_revenue?: number | null
+          total_10yr_tco?: number | null
+          total_annual_operating?: number | null
+          water_monthly?: number | null
+          yield_per_sqm_kg?: number | null
         }
         Relationships: []
       }
